@@ -46,15 +46,17 @@ const SCORE_MODE = 'roomLevels'
 
 // const SERVER='swc'
 // const STREAM_TITLE = 'Screeps Warfare Championship'
-// const SLACK_CHANNEL = '#swc'
+// const CHANNEL = '#swc'
 
 // const SERVER='powerarena'
 // const STREAM_TITLE = 'PowerArena'
-// const SLACK_CHANNEL = '#powerarena'
+// const CHANNEL = '#powerarena'
 
 const SERVER='botarena'
 const STREAM_TITLE = 'BotArena 214'
-const SLACK_CHANNEL = '#botarena'
+const CHANNEL = '#botarena'
+
+const DISPLAY_PLAYERS = 25;
 
 const teamMap = [
   // { name: 'Dragons', users: ['tigga', 'geir'] },
@@ -71,8 +73,7 @@ Vue.component('ba-header', {
   template: `
     <div>
       <div style="font-size: 24pt">${STREAM_TITLE}</div>
-      <div>https://screepspl.us/events/</div>
-      <div>http://chat.screeps.com ${SLACK_CHANNEL}</div>
+      <div>chat.screeps.com ${CHANNEL}</div>
       <div>Room: {{state.room}}</div>
       <div>Time: {{state.gameTime}}</div>
     </div>`,
@@ -81,16 +82,16 @@ Vue.component('ba-header', {
 Vue.component('scoreboard', {
   props: [],
   template: `
-    <div>
+    <div style="margin: 10px 0">
       <table>
         <tr>
-          <th>#</th>
-          <th style="text-align: left">Username</th>
-          <th style="text-align: center">Rooms</th>
-          <th style="text-align: center">Score</th>
+          <th style="text-align: left; font-size: 10pt">#</th>
+          <th style="text-align: left; font-size: 10pt">Username</th>
+          <th style="text-align: center; font-size: 10pt">Rooms</th>
+          <th style="text-align: center; font-size: 10pt">Score</th>
         </tr>
         <tr v-for="(record, index) in slicedRecords" :key="record.username" v-if="!slicedTeams.length">
-          <td>{{ index+1 }})</td>
+          <td style="font-size: 10pt">{{ index+1 }})</td>
           <td><img class="badge" :src="badgeURL(record.username)">{{record.username}}</td>
           <td style="text-align: center">{{record.rooms}}</td>
           <td style="text-align: center">{{record.score}}</td>
@@ -110,8 +111,8 @@ Vue.component('scoreboard', {
           </tr>
         </template>
       </table>
-      <div v-if="records.length > 15">Only top 15 players listed</div>
-      <div v-if="scoreMode === 'roomLevels'">Note: Score does not check for active spawns</div>
+      <div v-if="records.length > ${DISPLAY_PLAYERS}" style="margin-top: 10px; font-size: 10pt"> * Note: only Top ${DISPLAY_PLAYERS} players listed</div>
+      <!-- div v-if="scoreMode === 'roomLevels'">Note: Score does not check for active spawns</div -->
     </div>
     `,
   data() {
@@ -139,7 +140,7 @@ Vue.component('scoreboard', {
           if (!uids[own.user]) {
             uids[own.user] = {
               uid: own.user,
-              rooms: 1,
+              rooms: 0,
               score: 0
             }
           }
@@ -171,7 +172,7 @@ Vue.component('scoreboard', {
       return records
     },
     slicedRecords() {
-      return this.records.slice(0, 15)
+      return this.records.slice(0, DISPLAY_PLAYERS)
     },
     slicedTeams() {
       const noTeamUsers = new Set(this.records)
