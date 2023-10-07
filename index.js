@@ -275,7 +275,7 @@ const app2 = new Vue({
 // Restart occasionally, sometimes the cycle breaks, this helps auto-recover
 setTimeout(() => window.close(), 30 * 60 * 1000)
 document.addEventListener('DOMContentLoaded', () => {
-  map.setZoomFactor(0.9)
+  map.setZoomFactor(1)
 })
 let bias = 0
 async function roomSwap() {
@@ -443,8 +443,8 @@ async function run() {
     renderer.setTerrain(t)
   }
   renderer.resize()
-  renderer.zoomLevel = 0.19 //view.offsetHeight / 5000
-  console.log(renderer.zoomLevel, view.offsetWidth, view.clientWidth)
+  renderer.zoomLevel = 0.2 //view.offsetHeight / 5000
+  console.log({ zoom: renderer.zoomLevel, width: view.offsetWidth, height: view.clientWidth, computed: view.offsetHeight / 5000 });
   await api.socket.connect()
   api.socket.subscribe('warpath:battles')
   api.socket.subscribe('stats:full')
@@ -705,13 +705,13 @@ async function minimap() {
     }
   }, 500)
 
-  const width = 500
+  const width = 460
   miniMap.x = -width * (1 / renderer.app.stage.scale.x)
   miniMap.width = width * (1 / renderer.app.stage.scale.x) * 0.95
   miniMap.scale.y = miniMap.scale.x
   miniMap.rotation = rotateMap
   // miniMap.x += 50 * 10.5 * miniMap.scale.x
-  miniMap.y += 50 * 10.5 * miniMap.scale.y * 2.5
+  miniMap.y += 50 * 10.5 * miniMap.scale.y * 2.8
 
   renderer.app.stage.position.x = width
   renderer.app.stage.mask = undefined

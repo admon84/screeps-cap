@@ -19,7 +19,7 @@ function createWindow () {
     x:0, y:0,
     fullscreen: true,
     width, height, 
-    frame: DEV 
+    frame: DEV
   })
   mainWindow.loadFile('index.html')
   if(DEV) {
