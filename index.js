@@ -48,13 +48,14 @@ const SCORE_MODE = 'gpl'
 // const STREAM_TITLE = 'Screeps Warfare Championship'
 // const SLACK_CHANNEL = '#swc'
 
-const SERVER='powerarena'
-const STREAM_TITLE = 'PowerArena'
-const SLACK_CHANNEL = '#powerarena'
+// const SERVER='powerarena'
+// const STREAM_TITLE = 'PowerArena'
+// const SLACK_CHANNEL = '#powerarena'
 
-// const SERVER='botarena'
-// const STREAM_TITLE = 'BotArena'
-// const SLACK_CHANNEL = '#botarena'
+const SERVER='botarena'
+const STREAM_TITLE = 'BotArena 214'
+const SLACK_CHANNEL = '#botarena'
+
 const teamMap = [
   // { name: 'Dragons', users: ['tigga', 'geir'] },
   // { name: 'Knights', users: [], default: true },

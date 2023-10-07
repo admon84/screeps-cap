@@ -1,0 +1,46 @@
+battles
+
+ %c %c %c PixiJS 4.8.1 - ✰ WebGL ✰  %c  %c  http://www.pixijs.com/  %c %c ♥%c♥%c♥ 
+
+ background: #ff66a5; padding:5px 0; background: #ff66a5; padding:5px 0; color: #ff66a5; background: #030307; padding:5px 0; background: #ff66a5; padding:5px 0; background: #ffc3dc; padding:5px 0; background: #ff66a5; padding:5px 0; color: #ff2424; background: #fff; padding:5px 0; color: #ff2424; background: #fff; padding:5px 0; color: #ff2424; background: #fff; padding:5px 0;
+0.2 1600 1600
+Complete!
+battles
+[object Object]
+Scanning sectors
+Sectors found: E15N4,E5N4
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+setRoom E17N2
+sub E17N2
+reset
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+setRoom E13N4
+sub E13N4
+reset
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+setRoom E11N5
+sub E11N5
+reset
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+setRoom E8N3
+sub E8N3
+reset
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+GetMapRooms found 231 rooms
+setRoom E3N8
+sub E3N8
+reset
+GetMapRooms found 231 rooms
