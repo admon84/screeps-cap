@@ -41,8 +41,8 @@ let chatRoomTimeout = 0
 let mapRoomsCache = null
 const ROOM_SWAP_INTERVAL = 10000
 
-const SCORE_MODE = 'gpl'
-// const SCORE_MODE = 'roomLevels'
+// const SCORE_MODE = 'gpl'
+const SCORE_MODE = 'roomLevels'
 
 // const SERVER='swc'
 // const STREAM_TITLE = 'Screeps Warfare Championship'
@@ -714,7 +714,7 @@ async function minimap() {
   miniMap.x = -xOffset * (1 / renderer.app.stage.scale.x)
   miniMap.width = width * (1 / renderer.app.stage.scale.x) * 0.95
   miniMap.scale.y = miniMap.scale.x
-  miniMap.x += 50 * 10.5 * miniMap.scale.x
+  // miniMap.x += 50 * 10.5 * miniMap.scale.x
   miniMap.y += 50 * 10.5 * miniMap.scale.y
   renderer.app.stage.position.x = xOffset
   renderer.app.stage.mask = undefined
