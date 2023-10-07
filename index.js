@@ -74,8 +74,7 @@ Vue.component('ba-header', {
     <div class="my-10">
       <div class="large">${STREAM_TITLE}</div>
       <div>chat.screeps.com ${CHANNEL}</div>
-      <div>Room: {{state.room}}</div>
-      <div>Time: {{state.gameTime}}</div>
+      <div class="mt-5">tick: {{state.gameTime}}</div>
     </div>`,
 })
 
@@ -210,7 +209,7 @@ Vue.component("pvp-battles", {
   props: ['state'],
   template: `
     <div class="my-10">
-      <div>Recent Battles:</div>
+      <div v-if="battles.length">Recent Battles:</div>
       <transition-group name="battles">
         <div class="battle" v-for="b in battles" :key="b.room">
           <div class="room">{{ b.room }}</div>
@@ -241,14 +240,13 @@ const app = new Vue({
   template: `
     <div id="infoDiv">
       <ba-header :state="state"></ba-header>
+      <br>
       <scoreboard></scoreboard>
       <br>
       <pvp-battles :state="state"></pvp-battles>
     </div>`,
   data() {
-    return {
-      state
-    }
+    return { state }
   }
 })
 
@@ -256,6 +254,7 @@ const app2 = new Vue({
   el: '#usersDiv',
   template: `
     <div id="usersDiv">
+      <div class="mb-10">Room: {{state.room}}</div>
       <transition-group name="users">
         <div v-for="user in users" :key="user._id">
           <img class="badge" :src="user.badgeUrl">
@@ -695,30 +694,28 @@ async function minimap() {
       const ticks = Math.max(0, state.gameTime - lastPvpTime)
       const { x, y } = XYFromRoom(room)
       highlight
-        .lineStyle(1, 0xFF0000, 1 - (ticks / 100))
+        .lineStyle(2, 0xFF0000, 1 - (ticks / 100))
         .drawRect((x * 50), (y * 50), 50, 50)
     })
     if (currentRoom) {
       const { x, y } = XYFromRoom(currentRoom)
       highlight
-        .lineStyle(1, 0x00FF00, 0.6)
+        .lineStyle(2, 0x00FF00, 0.6)
         .drawRect((x * 50), (y * 50), 50, 50)
     }
   }, 500)
 
-
-  const width = 580
-  const xOffset = width + 10
-
-  miniMap.rotation = rotateMap
-
-  miniMap.x = -xOffset * (1 / renderer.app.stage.scale.x)
+  const width = 500
+  miniMap.x = -width * (1 / renderer.app.stage.scale.x)
   miniMap.width = width * (1 / renderer.app.stage.scale.x) * 0.95
   miniMap.scale.y = miniMap.scale.x
+  miniMap.rotation = rotateMap
   // miniMap.x += 50 * 10.5 * miniMap.scale.x
-  miniMap.y += 50 * 10.5 * miniMap.scale.y
-  renderer.app.stage.position.x = xOffset
+  miniMap.y += 50 * 10.5 * miniMap.scale.y * 2.5
+
+  renderer.app.stage.position.x = width
   renderer.app.stage.mask = undefined
+
   // const mask = new PIXI.Graphics()
   // const { CELL_SIZE, VIEW_BOX } = worldConfigs
   // mask.drawRect(-CELL_SIZE / 2, -CELL_SIZE / 2, VIEW_BOX, VIEW_BOX)

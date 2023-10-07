@@ -1,7 +1,7 @@
 body {
-  margin:0;
-  padding:0;
-  background: black;
+  margin: 0;
+  padding: 0;
+  background: #0a0a0a;
   font-family: "'Noto Sans', sans-serif";
 }
 .container {
@@ -15,8 +15,8 @@ body {
 #usersDiv {
   color: white;
   position: absolute;
-  top: 10px;
-  left: 635px;
+  top: 60px;
+  left: 200px;
 }
 .badge {
   width: 16px;
@@ -34,31 +34,16 @@ body {
   height: calc(50px * 11 * 0.9);
 }
 #mainDiv {
-  /*
-  position: fixed;
-  top: 10px;
-  left: 300px;
-  right: 100px;
-  bottom: 10px
-  */
-  /* flex: 0 0 calc(100vh - 20px); */
   flex: 3;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin: 10px 0;
   width: calc(100vh - 20px);
   height: calc(100vh - 20px);
   position: relative;
-  min-width: 1000px;
+  min-width: 1060px;
 }
 #infoDiv {
-  flex: 0 300px;
-  /*
-  position: fixed;
-  top: 0;
-  right: 50px;
-  width: 500px;
-  bottom: 0;
-  */
+  margin-top: 50px;
+  flex: 0 375px;
   color: white;
 }
 .battle {
@@ -83,30 +68,30 @@ body {
   flex: 0 0 48px;
 }
 .battles-enter-active, .battles-leave-active {
-  transition: all 1s;
+  transition: all 1s ease;
 }
-.battles-enter, .battles-leave-to /* .list-leave-active below version 2.1.8 */ {
+.battles-enter, .battles-leave-to {
   opacity: 0;
   transform: translateY(50px);
 }
-.battles-move {
-  transition: transform 1s;
-}
 .users-enter-active, .users-leave-active {
-  transition: all 1s;
+  transition: all 1s ease;
 }
-.users-enter, .users-leave-to /* .list-leave-active below version 2.1.8 */ {
+.users-enter, .users-leave-to {
   opacity: 0;
-  transform: translateY(-50px);
-}
-.users-move {
-  transition: transform 1s;
+  transform: translateY(50px);
 }
 .my-10 {
   margin: 10px 0;
 }
 .mt-10 {
   margin-top: 10px;
+}
+.mb-10 {
+  margin-bottom: 10px;
+}
+.mt-5 {
+  margin-top: 5px;
 }
 .small {
   font-size: 10pt;
