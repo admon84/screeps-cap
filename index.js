@@ -71,8 +71,8 @@ resetState()
 Vue.component('ba-header', {
   props: ['state'],
   template: `
-    <div>
-      <div style="font-size: 24pt">${STREAM_TITLE}</div>
+    <div class="my-10">
+      <div class="large">${STREAM_TITLE}</div>
       <div>chat.screeps.com ${CHANNEL}</div>
       <div>Room: {{state.room}}</div>
       <div>Time: {{state.gameTime}}</div>
@@ -82,36 +82,36 @@ Vue.component('ba-header', {
 Vue.component('scoreboard', {
   props: [],
   template: `
-    <div style="margin: 10px 0">
+    <div class="my-10">
       <table>
         <tr>
-          <th style="text-align: left; font-size: 10pt">#</th>
-          <th style="text-align: left; font-size: 10pt">Username</th>
-          <th style="text-align: center; font-size: 10pt">Rooms</th>
-          <th style="text-align: center; font-size: 10pt">Score</th>
+          <th class="left small">#</th>
+          <th class="left small">Username</th>
+          <th class="center small">Rooms</th>
+          <th class="center small">Score</th>
         </tr>
         <tr v-for="(record, index) in slicedRecords" :key="record.username" v-if="!slicedTeams.length">
-          <td style="font-size: 10pt">{{ index+1 }})</td>
+          <td class="small">{{ index+1 }})</td>
           <td><img class="badge" :src="badgeURL(record.username)">{{record.username}}</td>
-          <td style="text-align: center">{{record.rooms}}</td>
-          <td style="text-align: center">{{record.score}}</td>
+          <td class="center">{{record.rooms}}</td>
+          <td class="center">{{record.score}}</td>
         </tr>
         <template v-for="(team, index) in slicedTeams" :key="team.name">
           <tr>
             <td>{{ index+1 }})</td>
             <td>{{team.name}}</td>
-            <td style="text-align: center">{{team.rooms}}</td>
-            <td style="text-align: center">{{team.score}}</td>
+            <td class="center">{{team.rooms}}</td>
+            <td class="center">{{team.score}}</td>
           </tr>
           <tr v-for="(record, index) in team.users" :key="record.username">
             <td></td>
             <td><img class="badge" :src="badgeURL(record.username)">{{record.username}}</td>
-            <td style="text-align: center">{{record.rooms}}</td>
-            <td style="text-align: center">{{record.score}}</td>
+            <td class="center">{{record.rooms}}</td>
+            <td class="center">{{record.score}}</td>
           </tr>
         </template>
       </table>
-      <div v-if="records.length > ${DISPLAY_PLAYERS}" style="margin-top: 10px; font-size: 10pt"> * Note: only Top ${DISPLAY_PLAYERS} players listed</div>
+      <div v-if="records.length > ${DISPLAY_PLAYERS}" class="small mt-10"> * Note: only Top ${DISPLAY_PLAYERS} players listed</div>
       <!-- div v-if="scoreMode === 'roomLevels'">Note: Score does not check for active spawns</div -->
     </div>
     `,
@@ -209,7 +209,7 @@ Vue.component('scoreboard', {
 Vue.component("pvp-battles", {
   props: ['state'],
   template: `
-    <div>
+    <div class="my-10">
       <div>Recent Battles:</div>
       <transition-group name="battles">
         <div class="battle" v-for="b in battles" :key="b.room">

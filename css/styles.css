@@ -1,0 +1,122 @@
+body {
+  margin:0;
+  padding:0;
+  background: black;
+  font-family: "'Noto Sans', sans-serif";
+}
+.container {
+  display: flex;
+}
+.container > div {
+  flex: 1;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+#usersDiv {
+  color: white;
+  position: absolute;
+  top: 10px;
+  left: 635px;
+}
+.badge {
+  width: 16px;
+  margin-right: 2px;
+}
+#logo {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  color: white;
+}
+#map {
+  position: relative;
+  width: calc(50px * 11 * 0.9);
+  height: calc(50px * 11 * 0.9);
+}
+#mainDiv {
+  /*
+  position: fixed;
+  top: 10px;
+  left: 300px;
+  right: 100px;
+  bottom: 10px
+  */
+  /* flex: 0 0 calc(100vh - 20px); */
+  flex: 3;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  width: calc(100vh - 20px);
+  height: calc(100vh - 20px);
+  position: relative;
+  min-width: 1000px;
+}
+#infoDiv {
+  flex: 0 300px;
+  /*
+  position: fixed;
+  top: 0;
+  right: 50px;
+  width: 500px;
+  bottom: 0;
+  */
+  color: white;
+}
+.battle {
+  display: flex;
+}
+.battle > div {
+  flex: 1;
+}
+.battle .room {
+  flex: 0 0 50px;
+}
+.battle .ticks {
+  text-align: right;
+  padding-right: 10px;
+}
+.battle .class {
+  text-align: left;
+  flex: 0 0 30px;
+}
+.battle .badges {
+  text-align: left;
+  flex: 0 0 48px;
+}
+.battles-enter-active, .battles-leave-active {
+  transition: all 1s;
+}
+.battles-enter, .battles-leave-to /* .list-leave-active below version 2.1.8 */ {
+  opacity: 0;
+  transform: translateY(50px);
+}
+.battles-move {
+  transition: transform 1s;
+}
+.users-enter-active, .users-leave-active {
+  transition: all 1s;
+}
+.users-enter, .users-leave-to /* .list-leave-active below version 2.1.8 */ {
+  opacity: 0;
+  transform: translateY(-50px);
+}
+.users-move {
+  transition: transform 1s;
+}
+.my-10 {
+  margin: 10px 0;
+}
+.mt-10 {
+  margin-top: 10px;
+}
+.small {
+  font-size: 10pt;
+}
+.large {
+  font-size: 24pt;
+}
+.left {
+  text-align: left;
+}
+.center {
+  text-align: center;
+}
