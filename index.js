@@ -9,7 +9,6 @@ const { ScreepsAPI } = require('screeps-api')
 const { GameRenderer } = require('@screeps/renderer')
 const worldConfigs = require('./assets/worldConfigs')
 const { resourceMap, rescaleResources } = require('./assets/resourceMap')
-const argv = require('electron').remote.process.argv
 
 const origConsoleLog = console.log
 const log = (...args) => {

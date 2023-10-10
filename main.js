@@ -2,12 +2,19 @@
 const electron = require('electron')
 const {app, BrowserWindow} = electron
 
+// electron gpu settings
+app.commandLine.appendSwitch('ignore-gpu-blocklist')
+app.commandLine.appendSwitch('disable-gpu')
+app.commandLine.appendSwitch('disable-software-rasterizer')
+app.commandLine.appendSwitch('use-angle=swiftshader')
+app.disableHardwareAcceleration()
+
 let mainWindow = null;
 
 const DEV = process.argv.includes('--dev')
 
 function createWindow () {
-  const displays = electron.screen.getAllDisplays()
+  // const displays = electron.screen.getAllDisplays()
   const { width, height } = electron.screen.getPrimaryDisplay().workAreaSize
   
   mainWindow = new BrowserWindow({ 
@@ -19,9 +26,15 @@ function createWindow () {
     x:0, y:0,
     fullscreen: true,
     width, height, 
-    frame: DEV
+    frame: DEV,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
   })
+
   mainWindow.loadFile('index.html')
+
   if (DEV) {
     const { default: installExtension, VUEJS_DEVTOOLS } = require('electron-devtools-installer');
     installExtension(VUEJS_DEVTOOLS)
@@ -32,12 +45,11 @@ function createWindow () {
   } else {
     mainWindow.setMenu(null)
   }
+  
   mainWindow.on('closed', function () {
     mainWindow = null
   })
 }
-
-app.commandLine.appendSwitch('ignore-gpu-blacklist')
 
 app.on('ready', createWindow)
 
