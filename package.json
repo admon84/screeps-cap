@@ -4,16 +4,15 @@
   "main": "main.js",
   "license": "MIT",
   "scripts": {
-    "_postinstall": "cp -f lib/* node_modules/electron/dist/",
     "start": "electron .",
-    "start:log": "electron . | tee output.log",
-    "dev": "electron . --dev"
+    "start:dev": "electron . --dev",
+    "start:log": "electron . | tee output.log"
   },
   "dependencies": {
     "@screeps/renderer": "^1.5.18",
     "@screeps/renderer-metadata": "^1.5.18",
-    "electron": "~18",
-    "electron-devtools-installer": "^2.2.4",
+    "electron": "^27.0.0",
+    "electron-devtools-installer": "^3.2.0",
     "randomcolor": "^0.6.2",
     "screeps-api": "^1.16.0",
     "seedrandom": "^3.0.1",
