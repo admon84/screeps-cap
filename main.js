@@ -52,3 +52,9 @@ app.on('activate', function () {
     createWindow()
   }
 })
+
+// Restart occasionally, sometimes the cycle breaks, this helps auto-recover
+setTimeout(() => {
+  app.relaunch();
+  app.quit();
+}, 30 * 60 * 1000)
