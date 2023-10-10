@@ -35,7 +35,7 @@ let state = {
 let chatRoom = '';
 let chatRoomTimeout = 0;
 let mapRoomsCache = null;
-const ROOM_SWAP_INTERVAL = 2000; //10000
+const ROOM_SWAP_INTERVAL = 10000;
 
 // const SCORE_MODE = 'gpl'
 const SCORE_MODE = 'roomLevels';

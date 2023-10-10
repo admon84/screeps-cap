@@ -1,7 +1,7 @@
 const electron = require('electron');
 const { app, BrowserWindow } = electron;
 
-// gpu settings
+// GPU settings
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('disable-gpu');
 app.commandLine.appendSwitch('disable-software-rasterizer');
@@ -9,7 +9,7 @@ app.disableHardwareAcceleration();
 
 let mainWindow = null;
 
-const DEV = process.argv.includes('--dev');
+const isDevMode = process.argv.includes('--dev');
 
 function createWindow() {
   const { width, height } = electron.screen.getPrimaryDisplay().workAreaSize;
@@ -21,7 +21,7 @@ function createWindow() {
     experimentalCanvasFeatures: true,
     offscreen: true,
     fullscreen: true,
-    frame: DEV,
+    frame: isDevMode,
     width,
     height,
     x: 0,
@@ -34,11 +34,11 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
 
-  if (DEV) {
+  if (isDevMode) {
     const { default: installExtension, VUEJS_DEVTOOLS } = require('electron-devtools-installer');
     installExtension(VUEJS_DEVTOOLS)
-      .then(name => console.log(`Added Extension:  ${name}`))
-      .catch(err => console.log('An error occurred: ', err));
+      .then(name => console.log(`Added Extension: ${name}`))
+      .catch(err => console.log('Error:', err));
     mainWindow.webContents.openDevTools();
     mainWindow.maximize();
   } else {
@@ -52,19 +52,19 @@ function createWindow() {
 
 app.on('ready', createWindow);
 
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
 app.on('activate', function () {
   if (mainWindow === null) {
     createWindow();
   }
 });
 
-// Restart occasionally, sometimes the cycle breaks, this helps auto-recover
+app.on('window-all-closed', function () {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+// Restart app every 30 minutes to combat lag
 setTimeout(
   () => {
     app.relaunch();
