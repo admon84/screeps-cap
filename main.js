@@ -6,7 +6,6 @@ const {app, BrowserWindow} = electron
 app.commandLine.appendSwitch('ignore-gpu-blocklist')
 app.commandLine.appendSwitch('disable-gpu')
 app.commandLine.appendSwitch('disable-software-rasterizer')
-app.commandLine.appendSwitch('use-angle=swiftshader')
 app.disableHardwareAcceleration()
 
 let mainWindow = null;
