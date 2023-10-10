@@ -73,8 +73,8 @@ Vue.component('ba-header', {
   template: `
     <div class="my-10">
       <div class="large">${STREAM_TITLE}</div>
-      <div>chat.screeps.com ${CHANNEL}</div>
-      <div class="mt-5">tick: {{state.gameTime}}</div>
+      <!-- div>chat.screeps.com ${CHANNEL}</div -->
+      <div class="mt-5">Game.time = {{state.gameTime}}</div>
     </div>`,
 })
 
@@ -82,34 +82,32 @@ Vue.component('scoreboard', {
   props: [],
   template: `
     <div class="my-10">
-      <table>
-        <tr>
-          <th class="left small">#</th>
-          <th class="left small">Username</th>
-          <th class="center small">Rooms</th>
-          <th class="center small">Score</th>
-        </tr>
-        <tr v-for="(record, index) in slicedRecords" :key="record.username" v-if="!slicedTeams.length">
-          <td class="small">{{ index+1 }})</td>
-          <td><img class="badge" :src="badgeURL(record.username)">{{record.username}}</td>
-          <td class="center">{{record.rooms}}</td>
-          <td class="center">{{record.score}}</td>
-        </tr>
-        <template v-for="(team, index) in slicedTeams" :key="team.name">
-          <tr>
-            <td>{{ index+1 }})</td>
-            <td>{{team.name}}</td>
-            <td class="center">{{team.rooms}}</td>
-            <td class="center">{{team.score}}</td>
-          </tr>
-          <tr v-for="(record, index) in team.users" :key="record.username">
-            <td></td>
-            <td><img class="badge" :src="badgeURL(record.username)">{{record.username}}</td>
-            <td class="center">{{record.rooms}}</td>
-            <td class="center">{{record.score}}</td>
-          </tr>
-        </template>
-      </table>
+      <div class="flex flex-row">
+        <div class="bold left small">#</div>
+        <div class="bold left small username">Username</div>
+        <div class="bold center small">Rooms</div>
+        <div class="bold center small">Score</div>
+      </div>
+      <div class="flex flex-row" v-for="(record, index) in slicedRecords" :key="record.username" v-if="!slicedTeams.length">
+        <div class="small">{{ index+1 }})</div>
+        <div class="username"><img class="badge" :src="badgeURL(record.username)">{{record.username}}</div>
+        <div class="center">{{record.rooms}}</div>
+        <div class="center">{{record.score}}</div>
+      </div>
+      <template v-for="(team, index) in slicedTeams" :key="team.name">
+        <div class="flex flex-row">
+          <div>{{ index+1 }})</div>
+          <div>{{team.name}}</div>
+          <div class="center">{{team.rooms}}</div>
+          <div class="center">{{team.score}}</div>
+        </div>
+        <div class="flex flex-row" v-for="(record, index) in team.users" :key="record.username">
+          <div></div>
+          <div><img class="badge" :src="badgeURL(record.username)">{{record.username}}</div>
+          <div class="center">{{record.rooms}}</div>
+          <div class="center">{{record.score}}</div>
+        </div>
+      </template>
       <div v-if="records.length > ${DISPLAY_PLAYERS}" class="small mt-10"> * Note: only Top ${DISPLAY_PLAYERS} players listed</div>
       <!-- div v-if="scoreMode === 'roomLevels'">Note: Score does not check for active spawns</div -->
     </div>
@@ -221,7 +219,7 @@ Vue.component("pvp-battles", {
     </div>`,
   computed: {
     battles() {
-      console.log('battles')
+      // console.log('battles')
       return state.battles.map(({ room, ticks, defender, attackers, classification }) => {
         const participants = [defender, ...attackers].filter(Boolean)
         return { room, ticks, classification, participants }
@@ -352,8 +350,8 @@ async function resetState() {
 }
 
 function processStats(stats) {
-  console.log(stats)
-  state.stats = stats
+  console.log('stats:', JSON.stringify(stats));
+  state.stats = stats;
 }
 
 function processBattles(newBattles) {
@@ -444,7 +442,7 @@ async function run() {
   }
   renderer.resize()
   renderer.zoomLevel = 0.2 //view.offsetHeight / 5000
-  console.log({ zoom: renderer.zoomLevel, width: view.offsetWidth, height: view.clientWidth, computed: view.offsetHeight / 5000 });
+  console.log('Render settings:', JSON.stringify({ zoom: renderer.zoomLevel, width: view.offsetWidth, height: view.clientWidth, computed: view.offsetHeight / 5000 }));
   await api.socket.connect()
   api.socket.subscribe('warpath:battles')
   api.socket.subscribe('stats:full')

@@ -4,6 +4,10 @@ body {
   background: #0a0a0a;
   font-family: 'Noto Sans', sans-serif;
 }
+#app {
+  height: 100vh;
+  overflow: hidden;
+}
 .container {
   display: flex;
 }
@@ -19,6 +23,7 @@ body {
   left: 180px;
 }
 .badge {
+  height: 16px;
   width: 16px;
   margin-right: 2px;
 }
@@ -42,44 +47,47 @@ body {
   min-width: 1000px;
 }
 #infoDiv {
-  margin-top: 50px;
-  flex: 0 375px;
+  margin-top: 20px;
+  flex: 0 420px;
   color: white;
+  height: 100vh;
+  overflow-y: hidden;
 }
 .battle {
   display: flex;
+  flex-direction: row;
 }
 .battle > div {
   flex: 1;
-}
-.battle .room {
-  flex: 0 0 50px;
+  height: 20px;
 }
 .battle .ticks {
+  min-width: 100px;
   text-align: right;
   padding-right: 10px;
 }
-.battle .class {
-  text-align: left;
-  flex: 0 0 30px;
-}
-.battle .badges {
-  text-align: left;
-  flex: 0 0 48px;
-}
-.battles-enter-active, .battles-leave-active {
+/* .battles-enter-active, .battles-leave-active {
   transition: all 1s ease;
 }
 .battles-enter, .battles-leave-to {
   opacity: 0;
   transform: translateY(50px);
-}
+} */
 .users-enter-active, .users-leave-active {
   transition: all 1s ease;
 }
 .users-enter, .users-leave-to {
   opacity: 0;
   transform: translateY(50px);
+}
+.flex {
+  display: flex;
+}
+.flex > div {
+  flex: 1;
+}
+.flex-row {
+  flex-direction: row;
 }
 .my-10 {
   margin: 10px 0;
@@ -104,4 +112,10 @@ body {
 }
 .center {
   text-align: center;
+}
+.bold {
+  font-weight: bold;
+}
+.username {
+  min-width: 250px;
 }

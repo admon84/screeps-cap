@@ -5,8 +5,9 @@
   "license": "MIT",
   "scripts": {
     "_postinstall": "cp -f lib/* node_modules/electron/dist/",
-    "start": "electron . --ignore-gpu-blacklist | tee output.log",
-    "dev": "electron . --ignore-gpu-blacklist --dev"
+    "start": "electron .",
+    "start:log": "electron . | tee output.log",
+    "dev": "electron . --dev"
   },
   "dependencies": {
     "@screeps/renderer": "^1.2.5",

@@ -2,7 +2,7 @@
 const electron = require('electron')
 const {app, BrowserWindow} = electron
 
-let mainWindow
+let mainWindow = null;
 
 const DEV = process.argv.includes('--dev')
 
@@ -22,7 +22,7 @@ function createWindow () {
     frame: DEV
   })
   mainWindow.loadFile('index.html')
-  if(DEV) {
+  if (DEV) {
     const { default: installExtension, VUEJS_DEVTOOLS } = require('electron-devtools-installer');
     installExtension(VUEJS_DEVTOOLS)
         .then((name) => console.log(`Added Extension:  ${name}`))
@@ -36,6 +36,8 @@ function createWindow () {
     mainWindow = null
   })
 }
+
+app.commandLine.appendSwitch('disable-gpu')
 
 app.on('ready', createWindow)
 
