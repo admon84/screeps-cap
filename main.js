@@ -37,7 +37,7 @@ function createWindow () {
   })
 }
 
-app.commandLine.appendSwitch('disable-gpu')
+app.commandLine.appendSwitch('ignore-gpu-blacklist')
 
 app.on('ready', createWindow)
 
