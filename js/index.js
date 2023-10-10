@@ -718,7 +718,7 @@ async function minimap() {
     }
   }, 500);
 
-  const width = 460;
+  const width = 420;
   miniMap.x = -width * (1 / renderer.app.stage.scale.x);
   miniMap.width = width * (1 / renderer.app.stage.scale.x) * 0.95;
   miniMap.scale.y = miniMap.scale.x;

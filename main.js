@@ -8,7 +8,6 @@ app.commandLine.appendSwitch('disable-software-rasterizer');
 app.disableHardwareAcceleration();
 
 let mainWindow = null;
-
 const isDevMode = process.argv.includes('--dev');
 
 function createWindow() {
@@ -45,20 +44,20 @@ function createWindow() {
     mainWindow.setMenu(null);
   }
 
-  mainWindow.on('closed', function () {
+  mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
 
 app.on('ready', createWindow);
 
-app.on('activate', function () {
+app.on('activate', () => {
   if (mainWindow === null) {
     createWindow();
   }
 });
 
-app.on('window-all-closed', function () {
+app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }

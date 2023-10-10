@@ -1,5 +1,5 @@
 // Copied from screeps renderer demo
-//Created by vedi
+// Created by vedi
 
 require('@screeps/renderer-metadata');
 
