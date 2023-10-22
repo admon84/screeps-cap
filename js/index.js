@@ -114,10 +114,6 @@ const infoVue = new Vue({
   }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-  map.setZoomFactor(1);
-});
-
 async function setRoom(focusRoom) {
   console.log('setRoom:', focusRoom);
   let terrain = null;
