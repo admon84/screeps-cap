@@ -32,6 +32,7 @@ let state = {
 
 const SERVER = 'speedrun';
 const TITLE = 'Speedrun';
+const MINIMAP_RANGE = 2;
 
 resetState();
 
@@ -131,7 +132,6 @@ async function setRoom(focusRoom) {
     currentTerrain = terrain;
 
     await api.socket.unsubscribe(`room:${state.room}`);
-    console.log(`sub ${focusRoom}`);
     currentRoom = focusRoom;
     await api.socket.subscribe(`room:${focusRoom}`);
   }
@@ -236,7 +236,6 @@ async function run() {
       let { tick: tickSpeed = 1 } = await api.req('GET', '/api/game/tick');
       if (state.room !== currentRoom) {
         tickSpeed = 0;
-        console.log(`reset`);
         await api.socket.unsubscribe(`room:${state.room}`);
         await Promise.all([resetState(), renderer.setTerrain(currentTerrain)]);
         // console.log('setTerrain', currentTerrain)
@@ -316,18 +315,17 @@ function XYFromRoom(room) {
 async function getMapRooms(api, room, shard = 'shard0') {
   if (!mapRoomsCache) {
     const roomsToScan = [];
-    const range = 2;
-    const { x, y } = XYFromRoom(room);
-    for (let dx = -range; dx <= range; dx++) {
-      for (let dy = -range; dy <= range; dy++) {
+    let { x, y } = XYFromRoom(room);
+    for (let dx = -MINIMAP_RANGE; dx <= MINIMAP_RANGE; dx++) {
+      for (let dy = -MINIMAP_RANGE; dy <= MINIMAP_RANGE; dy++) {
         let room = XYToRoom(x + dx, y + dy);
         roomsToScan.push(room);
       }
     }
+    console.log(`getMapRooms: ${roomsToScan} rooms`);
     mapRoomsCache = roomsToScan;
   }
   const { rooms, users } = await scan(api, shard, mapRoomsCache);
-  console.log(`GetMapRooms found ${rooms.length} rooms`);
   return { rooms, users };
 }
 
@@ -347,6 +345,7 @@ async function scan(api, shard, rooms = []) {
 
 async function minimap(focusRoom) {
   const colors = {
+    0: '#00FF00', // player
     2: '#FF9600', // invader
     3: '#FF9600', // source keeper
     w: '#000000', // wall
@@ -358,16 +357,19 @@ async function minimap(focusRoom) {
     c: '#505050', // controller
     k: '#640000' // keeperLair
   };
+
   class MiniMapRoom {
-    constructor(api, id, { colors, rotate = 0 }) {
+    constructor(api, id, { colors, focusX, focusY }) {
       this.api = api;
       this.id = id;
       this.colors = colors;
       this.api.socket.subscribe(`roomMap2:${id}`, e => this.handle(e));
       this.cont = new PIXI.Container();
+      const [offsetX, offsetY] = [focusX - MINIMAP_RANGE, focusY - MINIMAP_RANGE];
       const { x, y } = XYFromRoom(id);
-      this.cont.x = x * 50;
-      this.cont.y = y * 50;
+      console.log('MiniMapRoom:', id, { x: x - offsetX, y: y - offsetY });
+      this.cont.x = (x - offsetX) * 50;
+      this.cont.y = (y - offsetY) * 50;
       this.cont.width = 50;
       this.cont.height = 50;
       this.img = PIXI.Sprite.from(`${api.opts.url}assets/map/${id}.png`);
@@ -377,26 +379,32 @@ async function minimap(focusRoom) {
       this.overlay = new PIXI.Graphics();
       this.cont.addChild(this.overlay);
     }
-    handle({ id, data }) {
+    getColor(id) {
+      if (!this.colors[id]) {
+        this.colors[id] = this.colors[0];
+      }
+      return parseInt(colors[id].slice(1), 16);
+    }
+    handle({ data }) {
       const { overlay } = this;
       overlay.clear();
-      for (const k in data) {
-        const arr = data[k];
-        overlay.beginFill(0x00ff00);
+      for (const id in data) {
+        const arr = data[id];
+        overlay.beginFill(this.getColor(id));
         arr.forEach(([x, y]) => overlay.drawRect(x, y, 1, 1));
         overlay.endFill();
       }
     }
   }
-  const rotateMap = 0; // (Math.PI * 2) * 0.25
+
   const { rooms } = await getMapRooms(api, focusRoom);
+  const { x: focusX, y: focusY } = XYFromRoom(focusRoom);
   const mapRooms = new Map();
   const miniMap = new PIXI.Container();
   window.miniMap = miniMap;
   renderer.app.stage.addChild(miniMap);
   for (const room of rooms) {
-    const r = new MiniMapRoom(api, room.id, { colors, rotate: rotateMap });
-    // r.update(room, users);
+    const r = new MiniMapRoom(api, room.id, { colors, focusX, focusY });
     mapRooms.set(room.id, r);
     miniMap.addChild(r.cont);
   }
@@ -405,11 +413,6 @@ async function minimap(focusRoom) {
     if (currentRoom === lastRoom) return;
     if (!currentRoom) return;
     lastRoom = currentRoom;
-    // const { rooms, users } = await getMapRooms(api);
-    // for (const room of rooms) {
-    //   const r = mapRooms.get(room.id);
-    //   r.update(room, users);
-    // }
   }, 1000);
 
   // const highlight = new PIXI.Graphics();
@@ -419,26 +422,24 @@ async function minimap(focusRoom) {
   //   highlight.clear();
   //   if (currentRoom) {
   //     const { x, y } = XYFromRoom(currentRoom);
-  //     highlight.lineStyle(2, 0x00ff00, 0.6).drawRect(x * 50, y * 50, 50, 50);
+  //     highlight.lineStyle(1, 0x00ff00, 0.6).drawRect(x * 50, y * 50, 50, 50);
   //   }
-  // }, 500);
+  // }, 1000);
 
   const width = 420;
+  miniMap.y = 80;
   miniMap.x = -width * (1 / renderer.app.stage.scale.x);
-  miniMap.width = width * (1 / renderer.app.stage.scale.x) * 0.95;
+  miniMap.width = width * (1 / renderer.app.stage.scale.x);
   miniMap.scale.y = miniMap.scale.x;
-  miniMap.rotation = rotateMap;
-  // miniMap.x += 50 * 10.5 * miniMap.scale.x;
-  miniMap.y += 50 * 10.5 * miniMap.scale.y * 2.8;
 
   renderer.app.stage.position.x = width;
   renderer.app.stage.mask = undefined;
 
-  // const mask = new PIXI.Graphics()
-  // const { CELL_SIZE, VIEW_BOX } = worldConfigs
-  // mask.drawRect(-CELL_SIZE / 2, -CELL_SIZE / 2, VIEW_BOX, VIEW_BOX)
-  // mask.drawRect(miniMap.x, miniMap.y, miniMap.width, miniMap.height)
-  // miniMap.addChild(mask)
+  // const mask = new PIXI.Graphics();
+  // const { CELL_SIZE, VIEW_BOX } = worldConfigs;
+  // mask.drawRect(-CELL_SIZE / 2, -CELL_SIZE / 2, VIEW_BOX, VIEW_BOX);
+  // mask.drawRect(miniMap.x, miniMap.y, miniMap.width, miniMap.height);
+  // miniMap.addChild(mask);
 }
 
 function sleep(ms) {
