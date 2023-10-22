@@ -270,10 +270,6 @@ const usersVue = new Vue({
   }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-  map.setZoomFactor(1);
-});
-
 let bias = 0;
 async function roomSwap() {
   // return setRoom('E7N5')
