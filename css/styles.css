@@ -6,25 +6,23 @@ body {
 }
 
 #app {
+  width: 100vw;
   height: 100vh;
   overflow: hidden;
 }
 
 #mainDiv {
-  flex: 3;
-  margin: 40px 0;
-  width: calc(100vh - 80px);
-  height: calc(100vh - 80px);
-  position: relative;
-  min-width: 1000px;
+  width: 100vw;
+  height: 100vh;
 }
 
 #infoDiv {
-  flex: 0 0 0 1;
-  padding-left: 20px;
-  margin-top: 20px;
+  position: absolute;
+  top: 54%;
+  right: 8%;
+  width: 24%;
+  padding: 20px;
   color: white;
-  height: 100vh;
   overflow-y: hidden;
 }
 
@@ -74,4 +72,12 @@ body {
 
 .bold {
   font-weight: bold;
+}
+
+.white {
+  color: white;
+}
+
+.yellow {
+  color: yellow;
 }

@@ -62,12 +62,3 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
-// Restart app every 30 minutes to combat lag
-setTimeout(
-  () => {
-    app.relaunch();
-    app.quit();
-  },
-  30 * 60 * 1000
-);

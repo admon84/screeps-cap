@@ -31,7 +31,7 @@ let state = {
 };
 
 const SERVER = 'speedrun';
-const TITLE = 'Speedrun';
+const TITLE = 'Screeps Speedrun!';
 const MINIMAP_RANGE = 2;
 
 resetState();
@@ -41,8 +41,7 @@ Vue.component('event-header', {
   template: `
     <div class="my-10">
       <div class="large">${TITLE}</div>
-      <div class="mt-5">Date: {{state.dateTime.toLocaleDateString()}}</div>
-      <div class="mt-5">Time: {{state.dateTime.toLocaleTimeString()}}</div>
+      <div class="mt-5">{{state.dateTime.toLocaleDateString()}} {{state.dateTime.toLocaleTimeString()}}</div>
       <div class="mt-5">Start tick: {{state.startTime}}</div>
       <div class="mt-5">Current tick: {{state.gameTime}}</div>
     </div>`
@@ -51,12 +50,12 @@ Vue.component('event-header', {
 Vue.component('event-tracker', {
   props: [],
   template: `
-    <div class="my-10">
+    <div class="my-10 mb-5">
       <div class="flex flex-row">
-        <div class="bold left small">Event</div>
+        <div class="bold left small"></div>
         <div class="bold center small">Ticks</div>
       </div>
-      <div class="flex flex-row" v-for="(record, index) in records" :key="record.event">
+      <div class="flex flex-row {{record.color}}" v-for="(record, index) in records" :key="record.event">
         <div class="event">{{record.event}}</div>
         <div class="center">{{record.ticks}}</div>
       </div>
@@ -83,7 +82,14 @@ Vue.component('event-tracker', {
         if (!own || !own.level) continue;
         for (const rcl of roomLevels) {
           if (rcl <= own.level) {
-            records.push({ event: `RCL${rcl}`, ticks: state.rclTime[rcl] });
+            records.push({
+              event: `Room Controller Level ${rcl}`,
+              ticks: state.rclTime[rcl],
+              color: rcl === own.level ? 'white' : 'yellow'
+            });
+          }
+          if (own.level <= rcl) {
+            state.rclTime[rcl] = state.gameTime - state.startTime;
           }
         }
       }
@@ -102,7 +108,7 @@ Vue.component('event-tracker', {
   }
 });
 
-const infoVue = new Vue({
+new Vue({
   el: '#infoDiv',
   template: `
     <div id="infoDiv">
@@ -186,7 +192,7 @@ async function run() {
   api = await ScreepsAPI.fromConfig(SERVER, 'screeps-cap');
   const { room: focusRoom } = api.appConfig;
 
-  const view = mainDiv;
+  const view = window.mainDiv;
   cachedObjects = {};
   const say = worldConfigs.metadata.objects.creep.processors.find(p => p.type === 'say');
   say.when = ({ state: { actionLog: { say } = {} } }) => !!say && say.isPublic;
@@ -198,18 +204,15 @@ async function run() {
       width: view.offsetWidth,
       height: view.offsetHeight
     },
-    // autoFocus: false,
+    autoFocus: true,
+    autoStart: true,
     resourceMap,
     rescaleResources,
     worldConfigs,
     onGameLoop: () => {},
     countMetrics: false,
-    // fitToWorld: {
-    //   width: 50,
-    //   height: 50
-    // },
     useDefaultLogger: false, //true,
-    backgroundColor: 0x000000 //0x505050
+    backgroundColor: 0x000000
   });
 
   await renderer.init(view);
@@ -221,7 +224,7 @@ async function run() {
   }
   renderer.setTerrain(t);
   renderer.resize();
-  renderer.zoomLevel = 0.2; //view.offsetHeight / 5000
+  renderer.zoomLevel = (view.offsetHeight / 5000) * 0.95; // 0.2
 
   await api.socket.connect();
   api.socket.subscribe('stats:full');
@@ -322,7 +325,7 @@ async function getMapRooms(api, room, shard = 'shard0') {
         roomsToScan.push(room);
       }
     }
-    console.log(`getMapRooms: ${roomsToScan} rooms`);
+    console.log(`getMapRooms: ${roomsToScan.length} rooms`);
     mapRoomsCache = roomsToScan;
   }
   const { rooms, users } = await scan(api, shard, mapRoomsCache);
@@ -367,7 +370,6 @@ async function minimap(focusRoom) {
       this.cont = new PIXI.Container();
       const [offsetX, offsetY] = [focusX - MINIMAP_RANGE, focusY - MINIMAP_RANGE];
       const { x, y } = XYFromRoom(id);
-      console.log('MiniMapRoom:', id, { x: x - offsetX, y: y - offsetY });
       this.cont.x = (x - offsetX) * 50;
       this.cont.y = (y - offsetY) * 50;
       this.cont.width = 50;
@@ -415,31 +417,21 @@ async function minimap(focusRoom) {
     lastRoom = currentRoom;
   }, 1000);
 
-  // const highlight = new PIXI.Graphics();
-  // highlight.alpha = 0.5;
-  // miniMap.addChild(highlight);
-  // setInterval(async () => {
-  //   highlight.clear();
-  //   if (currentRoom) {
-  //     const { x, y } = XYFromRoom(currentRoom);
-  //     highlight.lineStyle(1, 0x00ff00, 0.6).drawRect(x * 50, y * 50, 50, 50);
-  //   }
-  // }, 1000);
+  const width = window.mainDiv.offsetHeight / 2;
+  miniMap.x = window.mainDiv.offsetHeight * (1 / renderer.app.stage.scale.x);
+  miniMap.y = 0;
 
-  const width = 420;
-  miniMap.y = 80;
-  miniMap.x = -width * (1 / renderer.app.stage.scale.x);
   miniMap.width = width * (1 / renderer.app.stage.scale.x);
   miniMap.scale.y = miniMap.scale.x;
 
-  renderer.app.stage.position.x = width;
-  renderer.app.stage.mask = undefined;
+  // miniMap.y = 80;
+  // miniMap.x = -width * (1 / renderer.app.stage.scale.x);
+  // miniMap.width = width * (1 / renderer.app.stage.scale.x);
+  // miniMap.scale.y = miniMap.scale.x;
 
-  // const mask = new PIXI.Graphics();
-  // const { CELL_SIZE, VIEW_BOX } = worldConfigs;
-  // mask.drawRect(-CELL_SIZE / 2, -CELL_SIZE / 2, VIEW_BOX, VIEW_BOX);
-  // mask.drawRect(miniMap.x, miniMap.y, miniMap.width, miniMap.height);
-  // miniMap.addChild(mask);
+  renderer.app.stage.position.y = 16;
+  renderer.app.stage.position.x = window.mainDiv.offsetWidth / 16;
+  renderer.app.stage.mask = undefined;
 }
 
 function sleep(ms) {
