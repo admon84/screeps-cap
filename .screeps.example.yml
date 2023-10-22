@@ -1,7 +1,10 @@
 servers:
-  botarena:
-    host: botarena.screepspl.us
+  speedrun:
+    host: localhost
     secure: false
     port: 21025
-    username: ChangeMe
-    password: ChangeMe
+    username: YourUsername
+    password: YourPassword
+configs:
+  speedrun:
+    room: W7N3

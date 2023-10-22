@@ -1,8 +1,5 @@
 const _ = require('lodash');
 const fs = require('fs');
-const seedrandom = require('seedrandom');
-const randomColor = require('randomcolor');
-const TwitchBot = require('twitch-bot');
 const { ScreepsAPI } = require('screeps-api');
 const { GameRenderer } = require('@screeps/renderer');
 const worldConfigs = require('./js/worldConfigs');
@@ -16,108 +13,63 @@ const log = (...args) => {
 console.log = (...a) => log(...a);
 console.error = (...a) => log(...a);
 
-const battles = new Map();
+const roomLevels = [2, 3, 4, 5, 6, 7, 8];
+
 let api = null;
 let renderer = null;
 let currentRoom = '';
 let currentTerrain = null;
 let cachedObjects = {};
-let state = {
-  gameTime: 0,
-  pvp: {
-    rooms: []
-  },
-  battles: [],
-  stats: {
-    users: []
-  }
-};
-let chatRoom = '';
-let chatRoomTimeout = 0;
 let mapRoomsCache = null;
-const ROOM_SWAP_INTERVAL = 10000;
 
-// const SCORE_MODE = 'gpl'
-const SCORE_MODE = 'roomLevels';
+let state = {
+  dateTime: new Date(),
+  gameTime: 0,
+  startTime: 0,
+  rcl: 0,
+  rclTime: roomLevels.reduce((acc, level) => ({ ...acc, [level]: 0 }), [])
+};
 
-// const SERVER='swc'
-// const STREAM_TITLE = 'Screeps Warfare Championship'
-// const CHANNEL = '#swc'
+const SERVER = 'speedrun';
+const TITLE = 'Speedrun';
 
-// const SERVER='powerarena'
-// const STREAM_TITLE = 'PowerArena'
-// const CHANNEL = '#powerarena'
-
-const SERVER = 'botarena';
-const STREAM_TITLE = 'BotArena 214';
-const CHANNEL = '#botarena';
-
-const DISPLAY_PLAYERS = 25;
-
-const teamMap = [
-  // { name: 'Dragons', users: ['tigga', 'geir'] },
-  // { name: 'Knights', users: [], default: true },
-  // { name: 'Rob a Lion', users: ['robalian', 'qnz', 'yoner'] },
-  // { name: 'No Name Team 2', users: ['tigga', 'sergey', 'snowgoose'] },
-  // { name: 'Alphabet Nerds', users: ['saruss','qzarstb', 'rayderblitz'] },
-  // { name: 'The Bee Team', users: ['extreminador', 'geir', 'szpadel'] },
-];
 resetState();
 
 Vue.component('event-header', {
   props: ['state'],
   template: `
     <div class="my-10">
-      <div class="large">${STREAM_TITLE}</div>
-      <!-- div>chat.screeps.com ${CHANNEL}</div -->
-      <div class="mt-5">Game.time = {{state.gameTime}}</div>
+      <div class="large">${TITLE}</div>
+      <div class="mt-5">Date: {{state.dateTime.toLocaleDateString()}}</div>
+      <div class="mt-5">Time: {{state.dateTime.toLocaleTimeString()}}</div>
+      <div class="mt-5">Start tick: {{state.startTime}}</div>
+      <div class="mt-5">Current tick: {{state.gameTime}}</div>
     </div>`
 });
 
-Vue.component('player-scores', {
+Vue.component('event-tracker', {
   props: [],
   template: `
     <div class="my-10">
       <div class="flex flex-row">
-        <div class="bold left small">#</div>
-        <div class="bold left small username">Username</div>
-        <div class="bold center small">Rooms</div>
-        <div class="bold center small">Score</div>
+        <div class="bold left small">Event</div>
+        <div class="bold center small">Ticks</div>
       </div>
-      <div class="flex flex-row" v-for="(record, index) in slicedRecords" :key="record.username" v-if="!slicedTeams.length">
-        <div class="small">{{ index+1 }})</div>
-        <div class="username"><img class="badge" :src="badgeURL(record.username)">{{record.username}}</div>
-        <div class="center">{{record.rooms}}</div>
-        <div class="center">{{record.score}}</div>
+      <div class="flex flex-row" v-for="(record, index) in records" :key="record.event">
+        <div class="event">{{record.event}}</div>
+        <div class="center">{{record.ticks}}</div>
       </div>
-      <template v-for="(team, index) in slicedTeams" :key="team.name">
-        <div class="flex flex-row">
-          <div>{{ index+1 }})</div>
-          <div>{{team.name}}</div>
-          <div class="center">{{team.rooms}}</div>
-          <div class="center">{{team.score}}</div>
-        </div>
-        <div class="flex flex-row" v-for="(record, index) in team.users" :key="record.username">
-          <div></div>
-          <div><img class="badge" :src="badgeURL(record.username)">{{record.username}}</div>
-          <div class="center">{{record.rooms}}</div>
-          <div class="center">{{record.score}}</div>
-        </div>
-      </template>
-      <div v-if="records.length > ${DISPLAY_PLAYERS}" class="small mt-10"> * Note: only Top ${DISPLAY_PLAYERS} players listed</div>
-      <!-- div v-if="scoreMode === 'roomLevels'">Note: Score does not check for active spawns</div -->
     </div>
     `,
   data() {
     return {
       updateInterval: null,
       rooms: [],
-      users: {},
-      scoreMode: SCORE_MODE
+      users: {}
     };
   },
   mounted() {
-    this.updateInterval = setInterval(() => this.update(), 5000);
+    this.updateInterval = setInterval(() => this.update(), 1000);
     setTimeout(this.update, 1000);
   },
   unmount() {
@@ -126,70 +78,18 @@ Vue.component('player-scores', {
   computed: {
     records() {
       const records = [];
-      if (this.scoreMode === 'roomLevels') {
-        const uids = {};
-        for (const { own } of this.rooms) {
-          if (!own || !own.level) continue;
-          if (!uids[own.user]) {
-            uids[own.user] = {
-              uid: own.user,
-              rooms: 0,
-              score: 0
-            };
+      for (const { own } of this.rooms) {
+        if (!own || !own.level) continue;
+        for (const rcl of roomLevels) {
+          if (rcl <= own.level) {
+            records.push({ event: `RCL${rcl}`, ticks: state.rclTime[rcl] });
           }
-          uids[own.user].rooms++;
-          uids[own.user].roomLevels += own.level;
-          uids[own.user].score += own.level;
-        }
-        const data = Object.keys(uids).map(k => uids[k]);
-        data.sort((a, b) => b.score - a.score);
-        for (let record of data) {
-          const { score, rooms, uid } = record;
-          const { username } = this.users[uid];
-          if (username === 'Invader') continue;
-          records.push({ username, rooms, score });
-        }
-      }
-      if (this.scoreMode === 'gpl') {
-        const { users = [] } = state.stats;
-        users.sort((a, b) => b.power - a.power);
-        for (const user of users) {
-          // if (!user.power) continue
-          records.push({
-            score: user.powerLevel,
-            rooms: this.rooms.filter(r => r.own && r.own.level && r.own.user === user.id).length,
-            username: user.username
-          });
         }
       }
       return records;
-    },
-    slicedRecords() {
-      return this.records.slice(0, DISPLAY_PLAYERS);
-    },
-    slicedTeams() {
-      const noTeamUsers = new Set(this.records);
-      const teams = teamMap.map(t => {
-        const users = t.users
-          .map(user => this.records.find(u => u.username.match(new RegExp(user, 'i'))))
-          .filter(Boolean);
-        if (t.default) {
-          users.push(...noTeamUsers);
-        }
-        users.forEach(u => noTeamUsers.delete(u));
-        const rooms = users.reduce((l, u) => l + u.rooms, 0);
-        const score = users.reduce((l, u) => l + u.score, 0);
-        users.sort((a, b) => b.score - a.score);
-        return { name: t.name, users, rooms, score };
-      });
-      teams.sort((a, b) => b.score - a.score);
-      return teams;
     }
   },
   methods: {
-    badgeURL(username) {
-      return `${api.opts.url}api/user/badge-svg?username=${username}`;
-    },
     async update() {
       while (!api) await sleep(1000);
       const { rooms, users } = await getMapRooms(api);
@@ -201,72 +101,16 @@ Vue.component('player-scores', {
   }
 });
 
-Vue.component('battle-list', {
-  props: ['state'],
-  template: `
-    <div class="my-10">
-      <div v-if="battles.length">Recent Battles:</div>
-      <transition-group name="battles">
-        <div class="battle" v-for="b in battles" :key="b.room">
-          <div class="room">{{ b.room }}</div>
-          <div class="badges"><img class="badge" v-for="u of b.participants" :key="u" :src="badgeURL(u)"></div>
-          <div class="classification">Class {{ b.classification }}</div>
-          <div class="ticks">{{ b.ticks }} ticks ago</div>
-        </div>
-      </transition-group>
-    </div>`,
-  computed: {
-    battles() {
-      // console.log('battles')
-      return state.battles.map(({ room, ticks, defender, attackers, classification }) => {
-        const participants = [defender, ...attackers].filter(Boolean);
-        return { room, ticks, classification, participants };
-      });
-    }
-  },
-  methods: {
-    badgeURL(username) {
-      return `${api.opts.url}api/user/badge-svg?username=${username}`;
-    }
-  }
-});
-
 const infoVue = new Vue({
   el: '#infoDiv',
   template: `
     <div id="infoDiv">
       <event-header :state="state"></event-header>
       <br>
-      <player-scores></player-scores>
-      <br>
-      <battle-list :state="state"></battle-list>
+      <event-tracker></event-tracker>
     </div>`,
   data() {
     return { state };
-  }
-});
-
-const usersVue = new Vue({
-  el: '#usersDiv',
-  template: `
-    <div id="usersDiv">
-      <h4>Room: {{state.room}}</h4>
-      <div>
-        <transition-group name="users">
-          <div v-for="user in users" :key="user._id" class="center">
-            <img class="badge" :src="user.badgeUrl">
-            {{user.username}}
-          </div>
-        </transition-group>
-      </div>
-    </div>`,
-  data() {
-    return { state };
-  },
-  computed: {
-    users() {
-      return Object.values(this.state.users).filter(u => u._id.length > 1);
-    }
   }
 });
 
@@ -274,49 +118,11 @@ document.addEventListener('DOMContentLoaded', () => {
   map.setZoomFactor(1);
 });
 
-let bias = 0;
-async function roomSwap() {
-  // return setRoom('E7N5')
-  while (true) {
-    try {
-      // const [{ pvp }, battles = {}] = await Promise.all([
-      //   api.raw.experimental.pvp(90)
-      //   warpath().catch(() => ({})) // Catch handles being ran in non-warpath capable setups
-      // ])
-      const pvp = api.raw.experimental.pvp(90);
-      const [shard = 'shard0'] = Object.keys(pvp);
-      const battles = state.battles.filter(r => r.lastPvpTime > state.gameTime - 20);
-      const now = Date.now();
-      let room = '';
-      if (chatRoom && chatRoomTimeout > Date.now()) {
-        room = chatRoom;
-      } else if (battles.length) {
-        const battle = battles[Math.floor(Math.random() * Math.min(bias, battles.length))];
-        room = battle.room;
-        if (room === currentRoom) {
-          bias += 0.75;
-        } else {
-          bias = 0;
-        }
-      } else {
-        // const { stats } = await api.raw.game.mapStats(roomList, 'owner0')
-        const { rooms: rawRooms } = await getMapRooms(api);
-        const rooms = rawRooms.filter(r => r.own && r.own.level && r.own.user !== '2');
-        room = rooms[Math.floor(Math.random() * rooms.length)].id;
-      }
-      await setRoom(room);
-    } catch (e) {
-      console.error('roomSwap', e);
-    }
-    await sleep(ROOM_SWAP_INTERVAL);
-  }
-}
-
-async function setRoom(room) {
-  console.log(`setRoom ${room}`);
+async function setRoom(focusRoom) {
+  console.log('setRoom:', focusRoom);
   let terrain = null;
-  if (room !== currentRoom) {
-    let { terrain: [{ terrain: encoded } = {}] = [] } = await api.raw.game.roomTerrain(room, true);
+  if (focusRoom !== currentRoom) {
+    let { terrain: [{ terrain: encoded } = {}] = [] } = await api.raw.game.roomTerrain(focusRoom, true);
     const types = ['plain', 'wall', 'swamp', 'wall'];
     terrain = encoded
       .split('')
@@ -327,18 +133,16 @@ async function setRoom(room) {
         type: types[v]
       }));
     currentTerrain = terrain;
-  }
-  if (room !== currentRoom) {
+
     await api.socket.unsubscribe(`room:${state.room}`);
-    console.log(`sub ${room}`);
-    currentRoom = room;
-    await api.socket.subscribe(`room:${room}`);
+    console.log(`sub ${focusRoom}`);
+    currentRoom = focusRoom;
+    await api.socket.subscribe(`room:${focusRoom}`);
   }
 }
 
 async function resetState() {
   Object.assign(state, {
-    // objects: [],
     users: {
       2: {
         _id: '2',
@@ -371,58 +175,20 @@ async function resetState() {
 
 function processStats(stats) {
   state.stats = stats;
-}
 
-function processBattles(newBattles) {
-  for (const b of newBattles) {
-    // b.lastPvpTime += 100
-    battles.set(b.room, b);
-  }
-  const remove = [];
-  for (const b of battles.values()) {
-    if (b.lastPvpTime < state.gameTime - 50) {
-      remove.push(b.room);
-    }
-  }
-  remove.forEach(r => battles.delete(r));
-  battles.forEach(b => {
-    b.ticks = Math.max(0, state.gameTime - b.lastPvpTime);
-  });
-  state.battles = Array.from(battles.values());
-  const rank = ({ classification = 0, ticks }) => classification * 1000 - ticks;
-  state.battles.sort((a, b) => rank(b) - rank(a));
+  // from removed method processBattles()
+  // battles.forEach(b => {
+  //   b.ticks = Math.max(0, state.gameTime - b.lastPvpTime);
+  // });
 }
 
 async function run() {
+  setInterval(() => {
+    state.dateTime = new Date();
+  }, 1000);
+
   api = await ScreepsAPI.fromConfig(SERVER, 'screeps-cap');
-  // await api.raw.register.submit(api.opts.username, api.opts.username, api.opts.username, { main: '' })
-  const { twitch, chatTimeout = 60 } = api.appConfig;
-  if (twitch) {
-    console.log('Twitch integration activating');
-    setTimeout(() => {
-      try {
-        const Bot = new TwitchBot(twitch);
-        Bot.on('connected', () => console.log('Bot connected to twitch'));
-        Bot.on('join', channel => {
-          console.log(`Joined channel: ${channel}`);
-        });
-        Bot.on('error', err => {
-          console.log('twitch-bot', err.message);
-        });
-        Bot.on('message', chatter => {
-          const [, room] = chatter.message.match(/^!(?:room|goto) ([EW]\d+[NS]\d+)$/) || [];
-          if (room) {
-            setRoom(room);
-            chatRoom = room;
-            chatRoomTimeout = Date.now() + chatTimeout * 1000;
-            Bot.say(`Switching to room ${room} on tick ${state.gameTime}`);
-          }
-        });
-      } catch (e) {
-        console.log(`Twitch integration error: ${err.message}`);
-      }
-    }, 100);
-  }
+  const { room: focusRoom } = api.appConfig;
 
   const view = mainDiv;
   cachedObjects = {};
@@ -430,6 +196,7 @@ async function run() {
   say.when = ({ state: { actionLog: { say } = {} } }) => !!say && say.isPublic;
   GameRenderer.compileMetadata(worldConfigs.metadata);
   worldConfigs.BADGE_URL = `${api.opts.url}api/user/badge-svg?username=%1`;
+
   renderer = new GameRenderer({
     size: {
       width: view.offsetWidth,
@@ -448,25 +215,21 @@ async function run() {
     useDefaultLogger: false, //true,
     backgroundColor: 0x000000 //0x505050
   });
+
   await renderer.init(view);
-  {
-    const t = [];
-    for (let x = 0; x < 50; x++) {
-      for (let y = 0; y < 50; y++) {
-        t.push({ type: 'swamp', x, y, room: 'E0N0' });
-      }
+  const t = [];
+  for (let x = 0; x < 50; x++) {
+    for (let y = 0; y < 50; y++) {
+      t.push({ type: 'swamp', x, y, room: 'E0N0' });
     }
-    renderer.setTerrain(t);
   }
+  renderer.setTerrain(t);
   renderer.resize();
   renderer.zoomLevel = 0.2; //view.offsetHeight / 5000
 
   await api.socket.connect();
-  api.socket.subscribe('warpath:battles');
   api.socket.subscribe('stats:full');
-  api.req('GET', '/api/warpath/battles').then(data => processBattles(data));
   api.req('GET', '/stats').then(data => processStats(data));
-  api.socket.on('warpath:battles', ({ data }) => processBattles(data));
   api.socket.on('stats:full', ({ data }) => processStats(data));
   api.socket.on(
     'message',
@@ -475,7 +238,6 @@ async function run() {
       if (state.reseting) return console.log('racing');
       if (id !== currentRoom) return await api.socket.unsubscribe(`room:${id}`);
       let { tick: tickSpeed = 1 } = await api.req('GET', '/api/game/tick');
-      // let tickSpeed = 0.3
       if (state.room !== currentRoom) {
         tickSpeed = 0;
         console.log(`reset`);
@@ -483,7 +245,7 @@ async function run() {
         await Promise.all([resetState(), renderer.setTerrain(currentTerrain)]);
         // console.log('setTerrain', currentTerrain)
         state.reseting = true;
-        const [, controller] = Object.entries(objects).find(([, obj]) => obj && obj.type == 'controller') || [];
+        const controller = Object.values(objects).find(o => o && o.type === 'controller');
         worldConfigs.gameData.player = '';
         if (controller) {
           if (controller.user) {
@@ -500,18 +262,18 @@ async function run() {
       }
       for (const [id, diff] of Object.entries(objects)) {
         const cobj = (cachedObjects[id] = cachedObjects[id] || {});
-        // if (cobj) {
         if (diff === null) {
           delete cachedObjects[id];
         } else {
-          // cachedObjects[id] = Object.assign({}, cobj, diff)
           cachedObjects[id] = _.merge(cobj, diff);
         }
-        // } else {
-        //   cachedObjects[id] = _.cloneDeep(diff)
-        // }
       }
+      // update game time
       state.gameTime = gameTime || state.gameTime;
+      // set start time
+      if (!state.startTime) {
+        state.startTime = state.gameTime;
+      }
       try {
         const objects = _.cloneDeep(Array.from(Object.values(cachedObjects)));
         const ns = Object.assign({ objects }, state);
@@ -526,10 +288,10 @@ async function run() {
       }
     }
   );
-  console.log('Complete!');
+
   await api.me();
-  await minimap();
-  roomSwap();
+  await minimap(focusRoom);
+  await setRoom(focusRoom);
 }
 
 function XYToRoom(x, y) {
@@ -555,55 +317,39 @@ function XYFromRoom(room) {
   return { x, y };
 }
 
-async function getMapRooms(api, shard = 'shard0') {
+async function getMapRooms(api, room, shard = 'shard0') {
   if (!mapRoomsCache) {
-    console.log('Scanning sectors');
-    const sectors = await scanSectors();
-    let roomsToScan = [];
-    console.log('Sectors found:', sectors);
-    for (let room of sectors) {
-      let { x, y } = XYFromRoom(room);
-      for (let xx = 0; xx < 12; xx++) {
-        for (let yy = 0; yy < 12; yy++) {
-          let room = XYToRoom(x + xx - 6, y + yy - 6);
-          roomsToScan.push(room);
-        }
+    const roomsToScan = [];
+    const range = 2;
+    const { x, y } = XYFromRoom(room);
+    for (let dx = -range; dx <= range; dx++) {
+      for (let dy = -range; dy <= range; dy++) {
+        let room = XYToRoom(x + dx, y + dy);
+        roomsToScan.push(room);
       }
     }
     mapRoomsCache = roomsToScan;
   }
-  const { rooms, users } = await scan(mapRoomsCache);
+  const { rooms, users } = await scan(api, shard, mapRoomsCache);
   console.log(`GetMapRooms found ${rooms.length} rooms`);
   return { rooms, users };
-
-  async function scanSectors() {
-    const rooms = [];
-    for (let yo = -10; yo <= 10; yo++) {
-      for (let xo = -10; xo <= 10; xo++) {
-        const room = XYToRoom(xo * 10 + 5, yo * 10 + 5);
-        rooms.push(room);
-      }
-    }
-    const result = await scan(rooms);
-    return result.rooms.map(r => r.id);
-  }
-
-  async function scan(rooms = []) {
-    if (!rooms.length) return { rooms: [], users: {} };
-    const { stats, users } = await api.raw.game.mapStats(rooms, shard, 'owner0');
-    const normalRooms = [];
-    for (const k in stats) {
-      const { status } = stats[k];
-      stats[k].id = k;
-      if (status === 'normal') {
-        normalRooms.push(stats[k]);
-      }
-    }
-    return { rooms: normalRooms, users };
-  }
 }
 
-async function minimap() {
+async function scan(api, shard, rooms = []) {
+  if (!rooms.length) return { rooms: [], users: {} };
+  const { stats, users } = await api.raw.game.mapStats(rooms, shard, 'owner0');
+  const normalRooms = [];
+  for (const k in stats) {
+    const { status } = stats[k];
+    stats[k].id = k;
+    if (status === 'normal') {
+      normalRooms.push(stats[k]);
+    }
+  }
+  return { rooms: normalRooms, users };
+}
+
+async function minimap(focusRoom) {
   const colors = {
     2: '#FF9600', // invader
     3: '#FF9600', // source keeper
@@ -634,60 +380,27 @@ async function minimap() {
       this.cont.addChild(this.img);
       this.overlay = new PIXI.Graphics();
       this.cont.addChild(this.overlay);
-      this.badge = new PIXI.Sprite();
-      this.badge.anchor.x = 0.5;
-      this.badge.anchor.y = 0.5;
-      this.badge.x = 25;
-      this.badge.y = 25;
-      this.badge.rotation = -rotate || 0;
-      this.cont.addChild(this.badge);
-    }
-    getColor(identifier) {
-      if (!this.colors[identifier]) {
-        const rng = seedrandom(identifier);
-        const seed = rng().toString();
-        this.colors[identifier] = randomColor({
-          luminosity: 'bright',
-          seed
-        });
-      }
-      return parseInt(colors[identifier].slice(1), 16);
     }
     handle({ id, data }) {
       const { overlay } = this;
       overlay.clear();
       for (const k in data) {
         const arr = data[k];
-        overlay.beginFill(this.getColor(k));
+        overlay.beginFill(0x00ff00);
         arr.forEach(([x, y]) => overlay.drawRect(x, y, 1, 1));
         overlay.endFill();
       }
     }
-    update(roomInfo, users) {
-      this.badge.visible = !!roomInfo.own;
-      if (roomInfo.own) {
-        const user =
-          users[roomInfo.own.user] ||
-          state.users[roomInfo.own.user] ||
-          state.stats.users.find(u => u.id === roomInfo.own.users);
-        const badgeURL = `${this.api.opts.url}api/user/badge-svg?username=${user.username}`;
-        this.badge.texture = PIXI.Texture.from(badgeURL);
-        const size = roomInfo.own.level * (20 / 8) + 15;
-        this.badge.width = size;
-        this.badge.height = size;
-        this.badge.alpha = roomInfo.own.level ? 0.5 : 0.4;
-      }
-    }
   }
   const rotateMap = 0; // (Math.PI * 2) * 0.25
-  const { rooms, users } = await getMapRooms(api);
+  const { rooms } = await getMapRooms(api, focusRoom);
   const mapRooms = new Map();
   const miniMap = new PIXI.Container();
   window.miniMap = miniMap;
   renderer.app.stage.addChild(miniMap);
   for (const room of rooms) {
     const r = new MiniMapRoom(api, room.id, { colors, rotate: rotateMap });
-    r.update(room, users);
+    // r.update(room, users);
     mapRooms.set(room.id, r);
     miniMap.addChild(r.cont);
   }
@@ -696,27 +409,23 @@ async function minimap() {
     if (currentRoom === lastRoom) return;
     if (!currentRoom) return;
     lastRoom = currentRoom;
-    const { rooms, users } = await getMapRooms(api);
-    for (const room of rooms) {
-      const r = mapRooms.get(room.id);
-      r.update(room, users);
-    }
+    // const { rooms, users } = await getMapRooms(api);
+    // for (const room of rooms) {
+    //   const r = mapRooms.get(room.id);
+    //   r.update(room, users);
+    // }
   }, 1000);
-  const highlight = new PIXI.Graphics();
-  // highlight.alpha = 0.5
-  miniMap.addChild(highlight);
-  setInterval(async () => {
-    highlight.clear();
-    state.pvp.rooms.forEach(({ _id: room, lastPvpTime }) => {
-      const ticks = Math.max(0, state.gameTime - lastPvpTime);
-      const { x, y } = XYFromRoom(room);
-      highlight.lineStyle(2, 0xff0000, 1 - ticks / 100).drawRect(x * 50, y * 50, 50, 50);
-    });
-    if (currentRoom) {
-      const { x, y } = XYFromRoom(currentRoom);
-      highlight.lineStyle(2, 0x00ff00, 0.6).drawRect(x * 50, y * 50, 50, 50);
-    }
-  }, 500);
+
+  // const highlight = new PIXI.Graphics();
+  // highlight.alpha = 0.5;
+  // miniMap.addChild(highlight);
+  // setInterval(async () => {
+  //   highlight.clear();
+  //   if (currentRoom) {
+  //     const { x, y } = XYFromRoom(currentRoom);
+  //     highlight.lineStyle(2, 0x00ff00, 0.6).drawRect(x * 50, y * 50, 50, 50);
+  //   }
+  // }, 500);
 
   const width = 420;
   miniMap.x = -width * (1 / renderer.app.stage.scale.x);
