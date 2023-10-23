@@ -1,5 +1,7 @@
-// Copied from screeps renderer demo
-// Created by vedi
+/**
+ * Created by vedi on 07/04/2017
+ * Source: @screeps/renderer/demo
+ */
 
 require('@screeps/renderer-metadata');
 
@@ -14,7 +16,7 @@ module.exports = {
   BADGE_URL: '/api/user/badge-svg?username=%1',
   metadata: RENDERER_METADATA,
   gameData: {
-    player: '', //561e4d4645f3f7244a7622e8',
+    player: '',
     showMyNames: {
       spawns: false,
       creeps: false
@@ -25,8 +27,8 @@ module.exports = {
     },
     showFlagsNames: false,
     showCreepSpeech: false,
-    swampTexture: 'disabled' //'animated',
+    swampTexture: 'disabled' //'animated'
   },
-  lighting: 'disabled', //'normal',
+  lighting: 'disabled', //'normal'
   forceCanvas: false
 };

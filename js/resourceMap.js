@@ -1,10 +1,11 @@
-// Copied from screeps renderer demo
-// Created by vedi
+/**
+ * Created by vedi on 07/04/2017
+ * Source: @screeps/renderer/demo
+ */
 
 const resourceMap = {
   berserk: 'berserk.svg',
   bodyPartBar: 'bodyPartBar.svg',
-  // circle: 'circle.svg',
   'commander-lvl0': 'commander-lvl0.svg',
   'commander-lvl1': 'commander-lvl1.svg',
   'commander-lvl2': 'commander-lvl2.svg',
@@ -26,8 +27,6 @@ const resourceMap = {
   'drain-extension': 'drain-extension.svg',
   encourage: 'encourage.svg',
   exhaust: 'exhaust.svg',
-  //'regenerate-mineral': 'regenerate-mineral.svg',
-  //'regenerate-source': 'regenerate-source.svg',
   flag: 'flag.svg',
   'flag-secondary': 'flag-secondary.svg',
   'executor-lvl0': 'executor-lvl0.svg',
@@ -53,7 +52,6 @@ const resourceMap = {
   glow: 'glow.png',
   ground: 'ground.png',
   'ground-mask': 'ground-mask.png',
-  //'ground-mask2': 'ground-mask2.png',
   kill: 'kill.svg',
   lab: 'lab.svg',
   'lab-highlight': 'lab-highlight.svg',
