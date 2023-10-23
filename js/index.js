@@ -13,7 +13,8 @@ const log = (...args) => {
 console.log = (...a) => log(...a);
 console.error = (...a) => log(...a);
 
-const roomLevels = [2, 3, 4, 5, 6, 7, 8];
+const CONTROLLER_LEVELS = { 1: 200, 2: 45000, 3: 135000, 4: 405000, 5: 1215000, 6: 3645000, 7: 10935000 };
+const TRACK_LEVELS = [2, 3, 4, 5, 6, 7, 8];
 
 let api = null;
 let renderer = null;
@@ -27,7 +28,8 @@ let state = {
   gameTime: 0,
   startTime: 0,
   rcl: 0,
-  rclTime: roomLevels.reduce((acc, level) => ({ ...acc, [level]: 0 }), [])
+  rclTime: TRACK_LEVELS.reduce((acc, level) => ({ ...acc, [level]: 0 }), []),
+  controllerProgress: 0
 };
 
 const SERVER = 'speedrun';
@@ -39,23 +41,27 @@ resetState();
 Vue.component('event-header', {
   props: ['state'],
   template: `
-    <div class="my-10">
+    <div>
       <div class="large">${TITLE}</div>
-      <div class="mt-5">{{state.dateTime.toLocaleDateString()}} {{state.dateTime.toLocaleTimeString()}}</div>
-      <div class="mt-5">Start tick: {{state.startTime}}</div>
-      <div class="mt-5">Current tick: {{state.gameTime}}</div>
+      <div class="my-10">{{state.dateTime.toLocaleDateString()}} {{state.dateTime.toLocaleTimeString()}}</div>
+      <div class="my-10">Start tick: {{state.startTime}}</div>
+      <div class="my-10">Current tick: {{state.gameTime}}</div>
+      <div class="my-10">
+        Controller progress: {{state.controllerProgress}}
+        <span v-if="state.rcl && state.rcl < 8"> / {{CONTROLLER_LEVELS[state.rcl]}} ({{((state.controllerProgress / CONTROLLER_LEVELS[state.rcl]) * 100).toFixed(2)}}%)</span>
+      </div>
     </div>`
 });
 
 Vue.component('event-tracker', {
   props: [],
   template: `
-    <div class="my-10 mb-5">
-      <div class="flex flex-row">
+    <div>
+      <div class="flex flex-row my-10">
         <div class="bold left small"></div>
         <div class="bold center small">Ticks</div>
       </div>
-      <div class="flex flex-row {{record.color}}" v-for="(record, index) in records" :key="record.event">
+      <div class="flex flex-row my-10 {{record.color}}" v-for="(record, index) in records" :key="record.event">
         <div class="event">{{record.event}}</div>
         <div class="center">{{record.ticks}}</div>
       </div>
@@ -79,16 +85,18 @@ Vue.component('event-tracker', {
     records() {
       const records = [];
       for (const { own } of this.rooms) {
-        if (!own || !own.level) continue;
-        for (const rcl of roomLevels) {
-          if (rcl <= own.level) {
+        if (!own || !own.level || own.user !== worldConfigs.gameData.player) {
+          continue;
+        }
+        for (const rcl of TRACK_LEVELS) {
+          if (rcl <= own.level + 1) {
             records.push({
               event: `Room Controller Level ${rcl}`,
               ticks: state.rclTime[rcl],
-              color: rcl === own.level ? 'white' : 'yellow'
+              color: rcl <= own.level ? 'yellow' : 'white'
             });
           }
-          if (own.level <= rcl) {
+          if (own.level < rcl) {
             state.rclTime[rcl] = state.gameTime - state.startTime;
           }
         }
@@ -108,7 +116,7 @@ Vue.component('event-tracker', {
   }
 });
 
-new Vue({
+const infoVue = new Vue({
   el: '#infoDiv',
   template: `
     <div id="infoDiv">
@@ -177,11 +185,6 @@ async function resetState() {
 
 function processStats(stats) {
   state.stats = stats;
-
-  // from removed method processBattles()
-  // battles.forEach(b => {
-  //   b.ticks = Math.max(0, state.gameTime - b.lastPvpTime);
-  // });
 }
 
 async function run() {
@@ -204,8 +207,8 @@ async function run() {
       width: view.offsetWidth,
       height: view.offsetHeight
     },
-    autoFocus: true,
-    autoStart: true,
+    // autoFocus: true,
+    // autoStart: true,
     resourceMap,
     rescaleResources,
     worldConfigs,
@@ -219,7 +222,7 @@ async function run() {
   const t = [];
   for (let x = 0; x < 50; x++) {
     for (let y = 0; y < 50; y++) {
-      t.push({ type: 'swamp', x, y, room: 'E0N0' });
+      t.push({ type: 'plain', x, y, room: 'W0N0' });
     }
   }
   renderer.setTerrain(t);
@@ -233,18 +236,25 @@ async function run() {
   api.socket.on(
     'message',
     async ({ type, channel, id, data, data: { gameTime = 0, info, objects, users = {}, visual } = {} }) => {
-      if (type) if (type !== 'room') return;
-      if (state.reseting) return console.log('racing');
-      if (id !== currentRoom) return await api.socket.unsubscribe(`room:${id}`);
+      if (type && type !== 'room') {
+        return;
+      }
+      if (state.reseting) {
+        return;
+      }
+      if (id !== currentRoom) {
+        return await api.socket.unsubscribe(`room:${id}`);
+      }
+
       let { tick: tickSpeed = 1 } = await api.req('GET', '/api/game/tick');
       if (state.room !== currentRoom) {
         tickSpeed = 0;
         await api.socket.unsubscribe(`room:${state.room}`);
         await Promise.all([resetState(), renderer.setTerrain(currentTerrain)]);
-        // console.log('setTerrain', currentTerrain)
         state.reseting = true;
         const controller = Object.values(objects).find(o => o && o.type === 'controller');
         worldConfigs.gameData.player = '';
+        state.controllerId = '';
         if (controller) {
           if (controller.user) {
             worldConfigs.gameData.player = controller.user;
@@ -255,9 +265,11 @@ async function run() {
         }
         delete state.reseting;
       }
+
       for (const k in users) {
         state.users[k] = users[k];
       }
+
       for (const [id, diff] of Object.entries(objects)) {
         const cobj = (cachedObjects[id] = cachedObjects[id] || {});
         if (diff === null) {
@@ -266,12 +278,23 @@ async function run() {
           cachedObjects[id] = _.merge(cobj, diff);
         }
       }
-      // update game time
+
+      if (id === focusRoom) {
+        const controller = Object.values(objects).find(o => o && o.type === 'controller');
+        if (controller) {
+          state.controllerProgress = controller.progress;
+          state.rcl = controller.level;
+        }
+      }
+
+      // update game time state
       state.gameTime = gameTime || state.gameTime;
-      // set start time
+
+      // set start time in state
       if (!state.startTime) {
         state.startTime = state.gameTime;
       }
+
       try {
         const objects = _.cloneDeep(Array.from(Object.values(cachedObjects)));
         const ns = Object.assign({ objects }, state);
