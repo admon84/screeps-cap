@@ -29,6 +29,7 @@ let state = {
   startTime: 0,
   rcl: 0,
   rclTime: TRACK_LEVELS.reduce((acc, level) => ({ ...acc, [level]: 0 }), []),
+  controllerId: '',
   controllerProgress: 0
 };
 
@@ -56,7 +57,7 @@ Vue.component('event-header', {
 Vue.component('event-tracker', {
   props: [],
   template: `
-    <div>
+    <div v-if="records.length > 0">
       <div class="flex flex-row my-10">
         <div class="bold left small"></div>
         <div class="bold center small">Ticks</div>
@@ -270,6 +271,7 @@ async function run() {
         state.users[k] = users[k];
       }
 
+      // update cached object mutations
       for (const [id, diff] of Object.entries(objects)) {
         const cobj = (cachedObjects[id] = cachedObjects[id] || {});
         if (diff === null) {
@@ -282,9 +284,13 @@ async function run() {
       if (id === focusRoom) {
         const controller = Object.values(objects).find(o => o && o.type === 'controller');
         if (controller) {
-          state.controllerProgress = controller.progress;
-          state.rcl = controller.level;
+          state.controllerId = controller._id;
         }
+      }
+
+      if (state.controllerId && cachedObjects[state.controllerId]) {
+        state.controllerProgress = cachedObjects[state.controllerId].progress ?? 0;
+        state.rcl = cachedObjects[state.controllerId].level ?? 0;
       }
 
       // update game time state
