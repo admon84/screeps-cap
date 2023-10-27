@@ -94,7 +94,7 @@ Vue.component('event-tracker', {
         for (const rcl of TRACK_LEVELS) {
           // record ticks per each rcl below current
           // and use rclTracked to record the final tick count for a new rcl being reached
-          if (own.level < rcl && state.rclTracked !== rcl) {
+          if (own.level < rcl || state.rclTracked < rcl) {
             state.rclTime[rcl] = state.gameTime - state.startTime;
             state.rclTracked = rcl;
           }
@@ -248,6 +248,16 @@ async function run() {
   api.socket.on(
     'message',
     async ({ type, channel, id, data, data: { gameTime = 0, info, objects, users = {}, visual } = {} }) => {
+      // set start time in state
+      if (!state.startTime) {
+        // gameTime returns 0 on the first tick and correctly on the second tick and beyond
+        // gameTime - 1 matches the correct game start time when compared to the screeps client
+        state.startTime = Math.max(0, gameTime - 1);
+      }
+
+      // update game time state
+      state.gameTime = gameTime || state.gameTime;
+
       if (type && type !== 'room') {
         return;
       }
@@ -302,14 +312,6 @@ async function run() {
       if (state.controllerId && cachedObjects[state.controllerId]) {
         state.controllerProgress = cachedObjects[state.controllerId].progress ?? 0;
         state.rcl = cachedObjects[state.controllerId].level ?? 0;
-      }
-
-      // update game time state
-      state.gameTime = gameTime || state.gameTime;
-
-      // set start time in state
-      if (!state.startTime) {
-        state.startTime = state.gameTime;
       }
 
       try {
