@@ -94,7 +94,7 @@ Vue.component('event-tracker', {
         for (const rcl of TRACK_LEVELS) {
           // record ticks per each rcl below current
           // and use rclTracked to record the final tick count for a new rcl being reached
-          if (own.level < rcl || state.rclTracked !== rcl) {
+          if (own.level < rcl && state.rclTracked !== rcl) {
             state.rclTime[rcl] = state.gameTime - state.startTime;
             state.rclTracked = rcl;
           }
@@ -368,22 +368,21 @@ async function getMapRooms(api, room, shard = 'shard0') {
     console.log(`getMapRooms: ${roomsToScan.length} rooms`);
     mapRoomsCache = roomsToScan;
   }
-  const { rooms, users } = await scan(api, shard, mapRoomsCache);
-  return { rooms, users };
-}
 
-async function scan(api, shard, rooms = []) {
-  if (!rooms.length) return { rooms: [], users: {} };
-  const { stats, users } = await api.raw.game.mapStats(rooms, shard, 'owner0');
-  const normalRooms = [];
+  if (!mapRoomsCache.length) {
+    return { rooms: [], users: {} };
+  }
+
+  const { stats, users } = await api.raw.game.mapStats(mapRoomsCache, shard, 'owner0');
+  const rooms = [];
   for (const k in stats) {
     const { status } = stats[k];
     stats[k].id = k;
     if (status === 'normal') {
-      normalRooms.push(stats[k]);
+      rooms.push(stats[k]);
     }
   }
-  return { rooms: normalRooms, users };
+  return { rooms, users };
 }
 
 async function minimap(focusRoom) {
