@@ -21,7 +21,7 @@ function createWindow() {
     frame: isDevMode,
     width,
     height,
-    x: 2560,
+    x: 0,
     y: 0,
     webPreferences: {
       nodeIntegration: true,
