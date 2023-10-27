@@ -112,10 +112,11 @@ Vue.component('event-tracker', {
   },
   methods: {
     async update() {
-      while (!api) {
+      while (!api || !api.appConfig.room) {
         await sleep(500);
       }
-      const { rooms, users } = await getMapRooms(api);
+      const focusRoom = api.appConfig.room;
+      const { rooms, users } = await getMapRooms(api, focusRoom);
       this.rooms = rooms;
       this.users = users;
     }
@@ -199,7 +200,12 @@ async function run() {
   }, 500);
 
   api = await ScreepsAPI.fromConfig(SERVER, 'screeps-cap');
-  const { room: focusRoom } = api.appConfig;
+
+  if (!api.appConfig || !api.appConfig.hasOwnProperty('room')) {
+    throw 'Error: .screeps.yml is missing the screeps-cap config (see example in .screeps.example.yml)';
+  }
+
+  const focusRoom = api.appConfig.room;
 
   const view = window.mainDiv;
   cachedObjects = {};
