@@ -1,7 +1,5 @@
-/**
- * Created by vedi on 07/04/2017
- * Source: @screeps/renderer/demo
- */
+// Copied from screeps renderer demo
+// Created by vedi
 
 require('@screeps/renderer-metadata');
 
@@ -27,8 +25,8 @@ module.exports = {
     },
     showFlagsNames: false,
     showCreepSpeech: false,
-    swampTexture: 'disabled' //'animated'
+    swampTexture: 'low' //'animated', 'low', 'disabled'
   },
-  lighting: 'disabled', //'normal'
+  lighting: 'static', //'normal', 'static', 'disabled'
   forceCanvas: false
 };

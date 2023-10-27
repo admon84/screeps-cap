@@ -3,9 +3,11 @@ const { app, BrowserWindow } = electron;
 
 // GPU settings
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
-app.commandLine.appendSwitch('disable-gpu');
-app.commandLine.appendSwitch('disable-software-rasterizer');
-app.disableHardwareAcceleration();
+if (process.argv.includes('--no-gpu')) {
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-software-rasterizer');
+  app.disableHardwareAcceleration();
+}
 
 let mainWindow = null;
 const isDevMode = process.argv.includes('--dev');
@@ -14,10 +16,6 @@ function createWindow() {
   const { width, height } = electron.screen.getPrimaryDisplay().workAreaSize;
 
   mainWindow = new BrowserWindow({
-    webgl: true,
-    webSecurity: false,
-    experimentalFeatures: true,
-    experimentalCanvasFeatures: true,
     offscreen: true,
     fullscreen: true,
     frame: isDevMode,
@@ -27,7 +25,11 @@ function createWindow() {
     y: 0,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
+      webgl: true,
+      webSecurity: true,
+      experimentalFeatures: true,
+      experimentalCanvasFeatures: true
     }
   });
 

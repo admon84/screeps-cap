@@ -6,6 +6,7 @@
   "scripts": {
     "start": "electron .",
     "start:dev": "electron . --dev",
+    "start:nogpu": "electron . --no-gpu",
     "start:log": "electron . | tee output.log"
   },
   "dependencies": {
