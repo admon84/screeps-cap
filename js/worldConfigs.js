@@ -25,8 +25,8 @@ module.exports = {
     },
     showFlagsNames: false,
     showCreepSpeech: false,
-    swampTexture: 'disabled' //'animated',
+    swampTexture: 'low' //'animated', 'low', 'disabled'
   },
-  lighting: 'disabled', //'normal',
+  lighting: 'static', //'normal', 'static', 'disabled'
   forceCanvas: false
 };
