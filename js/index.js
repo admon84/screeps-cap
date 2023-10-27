@@ -30,7 +30,7 @@ let state = {
   startTime: 0,
   startRcl: null,
   rcl: 0,
-  rclTracked: 0,
+  rclFinished: 0,
   rclTime: TRACK_LEVELS.reduce((acc, level) => ({ ...acc, [level]: 0 }), []),
   controllerId: '',
   controllerProgress: 0
@@ -95,12 +95,17 @@ Vue.component('event-tracker', {
         if (!own || !own.level || own.user !== worldConfigs.gameData.player) {
           continue;
         }
+
+        // record the final tick count for a new rcl being reached
+        if (state.rclFinished !== state.rcl) {
+          state.rclTime[state.rcl] = state.gameTime - state.startTime;
+          state.rclFinished = state.rcl;
+        }
+
         for (const rcl of TRACK_LEVELS) {
           // record ticks per each rcl below current
-          // and use rclTracked to record the final tick count for a new rcl being reached
-          if (own.level < rcl || state.rclTracked < rcl) {
+          if (own.level < rcl) {
             state.rclTime[rcl] = state.gameTime - state.startTime;
-            state.rclTracked = rcl;
           }
           // push records to be displayed in the event tracker
           if (rcl > state.startRcl && rcl <= own.level + 1) {
