@@ -28,6 +28,7 @@ let state = {
   dateTime: new Date(),
   gameTime: 0,
   startTime: 0,
+  startRcl: null,
   rcl: 0,
   rclTracked: 0,
   rclTime: TRACK_LEVELS.reduce((acc, level) => ({ ...acc, [level]: 0 }), []),
@@ -64,9 +65,9 @@ Vue.component('event-tracker', {
         <div class="bold left small"></div>
         <div class="bold center small">Ticks</div>
       </div>
-      <div class="flex flex-row my-10 {{record.color}}" v-for="(record, index) in records" :key="record.event">
+      <div class="flex flex-row my-10" v-for="(record, index) in records" :key="record.event" :data-complete="record.complete">
         <div class="event">{{record.event}}</div>
-        <div class="center">{{record.ticks}}</div>
+        <div class="center" v-if="record.ticks">{{record.ticks}}</div>
       </div>
     </div>
     `,
@@ -87,6 +88,9 @@ Vue.component('event-tracker', {
   computed: {
     records() {
       const records = [];
+      if (!state.startRcl) {
+        return records;
+      }
       for (const { own } of this.rooms) {
         if (!own || !own.level || own.user !== worldConfigs.gameData.player) {
           continue;
@@ -99,11 +103,11 @@ Vue.component('event-tracker', {
             state.rclTracked = rcl;
           }
           // push records to be displayed in the event tracker
-          if (rcl <= own.level + 1) {
+          if (rcl > state.startRcl && rcl <= own.level + 1) {
             records.push({
               event: `Room Controller Level ${rcl}`,
               ticks: state.rclTime[rcl],
-              color: rcl <= own.level ? 'yellow' : 'white'
+              complete: rcl <= own.level
             });
           }
         }
@@ -312,6 +316,9 @@ async function run() {
       if (state.controllerId && cachedObjects[state.controllerId]) {
         state.controllerProgress = cachedObjects[state.controllerId].progress ?? 0;
         state.rcl = cachedObjects[state.controllerId].level ?? 0;
+        if (!state.startRcl) {
+          state.startRcl = state.rcl;
+        }
       }
 
       try {
