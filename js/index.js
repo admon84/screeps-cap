@@ -13,6 +13,7 @@ const log = (...args) => {
 console.log = (...a) => log(...a);
 console.error = (...a) => log(...a);
 
+const TICK_SPEED = 100;
 const CONTROLLER_LEVELS = { 1: 200, 2: 45000, 3: 135000, 4: 405000, 5: 1215000, 6: 3645000, 7: 10935000 };
 const TRACK_LEVELS = [2, 3, 4, 5, 6, 7, 8];
 
@@ -77,8 +78,8 @@ Vue.component('event-tracker', {
     };
   },
   mounted() {
-    this.updateInterval = setInterval(() => this.update(), 250);
-    setTimeout(this.update, 250);
+    this.updateInterval = setInterval(this.update, TICK_SPEED);
+    setTimeout(this.update, TICK_SPEED);
   },
   unmount() {
     clearInterval(this.updateInterval);
@@ -185,9 +186,8 @@ async function resetState() {
   cachedObjects = {};
   if (renderer) {
     renderer.erase();
-    // renderer.applyState(state, 0)
   }
-  await sleep(100);
+  await sleep(TICK_SPEED);
 }
 
 function processStats(stats) {
@@ -251,7 +251,7 @@ async function run() {
       if (type && type !== 'room') {
         return;
       }
-      if (state.reseting) {
+      if (state.resetting) {
         return;
       }
       if (id !== currentRoom) {
@@ -263,7 +263,7 @@ async function run() {
         tickSpeed = 0;
         await api.socket.unsubscribe(`room:${state.room}`);
         await Promise.all([resetState(), renderer.setTerrain(currentTerrain)]);
-        state.reseting = true;
+        state.resetting = true;
         const controller = Object.values(objects).find(o => o && o.type === 'controller');
         worldConfigs.gameData.player = '';
         state.controllerId = '';
@@ -275,7 +275,7 @@ async function run() {
             worldConfigs.gameData.player = controller.reservation.user;
           }
         }
-        delete state.reseting;
+        delete state.resetting;
       }
 
       for (const k in users) {
@@ -319,10 +319,10 @@ async function run() {
       } catch (e) {
         console.error('Error in update', e);
         await api.socket.unsubscribe(`room:${state.room}`);
-        await sleep(100);
-        const r = currentRoom;
+        await sleep(TICK_SPEED);
+        const room = currentRoom;
         state.room = currentRoom = '';
-        setRoom(r); // Reset the view
+        setRoom(room); // Reset the view
       }
     }
   );
@@ -446,16 +446,10 @@ async function minimap(focusRoom) {
   window.miniMap = miniMap;
   renderer.app.stage.addChild(miniMap);
   for (const room of rooms) {
-    const r = new MiniMapRoom(api, room.id, { colors, focusX, focusY });
-    mapRooms.set(room.id, r);
-    miniMap.addChild(r.cont);
+    const miniMapRoom = new MiniMapRoom(api, room.id, { colors, focusX, focusY });
+    mapRooms.set(room.id, miniMapRoom);
+    miniMap.addChild(miniMapRoom.cont);
   }
-  let lastRoom = '';
-  setInterval(async () => {
-    if (currentRoom === lastRoom) return;
-    if (!currentRoom) return;
-    lastRoom = currentRoom;
-  }, 1000);
 
   const width = window.mainDiv.offsetHeight / 2;
   miniMap.x = window.mainDiv.offsetHeight * (1 / renderer.app.stage.scale.x);
