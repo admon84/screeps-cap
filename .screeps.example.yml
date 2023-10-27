@@ -6,5 +6,5 @@ servers:
     username: YourUsername
     password: YourPassword
 configs:
-  speedrun:
+  screeps-cap:
     room: W7N3
