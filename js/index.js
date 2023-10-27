@@ -28,6 +28,7 @@ let state = {
   gameTime: 0,
   startTime: 0,
   rcl: 0,
+  rclTracked: 0,
   rclTime: TRACK_LEVELS.reduce((acc, level) => ({ ...acc, [level]: 0 }), []),
   controllerId: '',
   controllerProgress: 0
@@ -76,8 +77,8 @@ Vue.component('event-tracker', {
     };
   },
   mounted() {
-    this.updateInterval = setInterval(() => this.update(), 1000);
-    setTimeout(this.update, 1000);
+    this.updateInterval = setInterval(() => this.update(), 250);
+    setTimeout(this.update, 250);
   },
   unmount() {
     clearInterval(this.updateInterval);
@@ -90,15 +91,19 @@ Vue.component('event-tracker', {
           continue;
         }
         for (const rcl of TRACK_LEVELS) {
+          // record ticks per each rcl below current
+          // and use rclTracked to record the final tick count for a new rcl being reached
+          if (own.level < rcl || state.rclTracked !== rcl) {
+            state.rclTime[rcl] = state.gameTime - state.startTime;
+            state.rclTracked = rcl;
+          }
+          // push records to be displayed in the event tracker
           if (rcl <= own.level + 1) {
             records.push({
               event: `Room Controller Level ${rcl}`,
               ticks: state.rclTime[rcl],
               color: rcl <= own.level ? 'yellow' : 'white'
             });
-          }
-          if (own.level < rcl) {
-            state.rclTime[rcl] = state.gameTime - state.startTime;
           }
         }
       }
@@ -107,10 +112,10 @@ Vue.component('event-tracker', {
   },
   methods: {
     async update() {
-      while (!api) await sleep(1000);
+      while (!api) {
+        await sleep(500);
+      }
       const { rooms, users } = await getMapRooms(api);
-      // const { stats, users } = await api.raw.game.mapStats(roomList, 'owner0')
-      // this.stats = stats
       this.rooms = rooms;
       this.users = users;
     }
@@ -191,7 +196,7 @@ function processStats(stats) {
 async function run() {
   setInterval(() => {
     state.dateTime = new Date();
-  }, 1000);
+  }, 500);
 
   api = await ScreepsAPI.fromConfig(SERVER, 'screeps-cap');
   const { room: focusRoom } = api.appConfig;
@@ -452,11 +457,6 @@ async function minimap(focusRoom) {
 
   miniMap.width = width * (1 / renderer.app.stage.scale.x);
   miniMap.scale.y = miniMap.scale.x;
-
-  // miniMap.y = 80;
-  // miniMap.x = -width * (1 / renderer.app.stage.scale.x);
-  // miniMap.width = width * (1 / renderer.app.stage.scale.x);
-  // miniMap.scale.y = miniMap.scale.x;
 
   renderer.app.stage.position.y = 16;
   renderer.app.stage.position.x = window.mainDiv.offsetWidth / 16;
