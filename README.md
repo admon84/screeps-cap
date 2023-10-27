@@ -1,4 +1,4 @@
-## screeps-cap
+## screeps-cap (speedrun)
 
 This client was developed by [AlinaNova21](https://github.com/AlinaNova21/screeps-cap) for live streaming Screeps events such as BotArena and Screeps Warfare Championship on Twitch.
 
